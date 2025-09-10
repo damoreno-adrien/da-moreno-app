@@ -46,6 +46,7 @@
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                             </button>
                             <div id="mobile-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                                <a href="./my-orders.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="my_orders">My Orders</a>
                                 <a href="./admin.html" id="admin-link-mobile" class="hidden block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="admin_dashboard">Admin</a>
                                 <button id="logout-btn-mobile" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="logout">Logout</button>
                             </div>
@@ -57,7 +58,7 @@
                     </div>
                 </div>
             </div>
-            <nav class="mt-6 border-b">
+            <nav class="mt-6 border-b hidden sm:block">
                 <div class="flex items-center gap-6 text-gray-500">
                     <a href="./my-orders.html" class="nav-link py-3 border-b-2 border-transparent hover:text-blue-600" data-key="my_orders">My Orders</a>
                     <a href="./index.html" class="nav-link active py-3 border-b-2 font-semibold" data-key="create_order">Create Order</a>
@@ -295,7 +296,17 @@
             if(!productGrid) return;
             productGrid.innerHTML = '';
             const searchTerm = searchInput.value.toLowerCase();
-            const filteredProducts = allProducts.filter(product => (currentFilter === (currentLang === 'th' ? 'ทั้งหมด' : 'All') || product[`category_${currentLang}`] === currentFilter) && (product.name_en.toLowerCase().includes(searchTerm) || (product.name_th && product.name_th.toLowerCase().includes(searchTerm)) || (product.product_reference && product.product_reference.toLowerCase().includes(searchTerm))));
+            const filteredProducts = allProducts.filter(product => {
+                const nameEn = product.name_en || '';
+                const nameTh = product.name_th || '';
+                const ref = product.product_reference || '';
+                const keywords = product.keywords || '';
+                return (currentFilter === (currentLang === 'th' ? 'ทั้งหมด' : 'All') || product[`category_${currentLang}`] === currentFilter) && 
+                       (nameEn.toLowerCase().includes(searchTerm) || 
+                        nameTh.toLowerCase().includes(searchTerm) || 
+                        ref.toLowerCase().includes(searchTerm) ||
+                        keywords.toLowerCase().includes(searchTerm));
+            });
             if (filteredProducts.length === 0 && allProducts.length > 0) { productGrid.innerHTML = `<p class="text-gray-500 col-span-full text-center">${currentLang === 'th' ? 'ไม่พบสินค้า' : 'No products found.'}</p>`; return; }
             filteredProducts.forEach(product => {
                 const card = `<div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform transform hover:-translate-y-1 flex flex-col"><img src="${product.imageUrl || 'https://placehold.co/400x400/e2e8f0/64748b?text=No+Img'}" alt="${product.name_en}" class="w-full h-40 object-cover"><div class="p-4 flex flex-col flex-grow"><h3 class="font-semibold text-lg truncate">${product[`name_${currentLang}`]}</h3><p class="text-gray-500 text-sm">Ref: ${product.product_reference || 'N/A'}</p><div class="flex items-center justify-between mt-4 pt-2 border-t mt-auto"><span class="text-gray-600 font-medium">${currentLang === 'th' ? 'ต่อ' : 'Per'} ${product[`packaging_${currentLang}`]}</span><button data-id="${product.id}" class="add-to-cart-btn bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">${currentLang === 'th' ? 'เพิ่ม' : 'Add'}</button></div></div></div>`;
