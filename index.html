@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Da Moreno At Town - Supply Orders</title>
+    <title>Create Order - Da Moreno</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -18,6 +18,7 @@
         .toast.show { transform: translateX(0); }
         .lang-btn.active { background-color: #2563eb; color: white; }
         .lang-btn:not(.active) { background-color: #e5e7eb; color: #374151; }
+        .nav-link.active { color: #2563eb; border-bottom-color: #2563eb; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -44,14 +45,20 @@
                     </div>
                 </div>
             </div>
+            <nav class="mt-6 border-b">
+                <div class="flex items-center gap-6 text-gray-500">
+                    <a href="./my-orders.html" class="nav-link py-3 border-b-2 border-transparent hover:text-blue-600" data-key="my_orders">My Orders</a>
+                    <a href="./index.html" class="nav-link active py-3 border-b-2 font-semibold" data-key="create_order">Create Order</a>
+                </div>
+            </nav>
         </header>
 
-        <div id="user-orders-dashboard" class="mb-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4" data-key="my_pending_orders">My Orders</h2>
-            <div id="my-pending-orders-list" class="space-y-4"></div>
-            <div id="my-orders-loading" class="text-center py-6">
+        <div id="team-orders-dashboard" class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4" data-key="team_pending_orders">Team's Pending Orders</h2>
+            <div id="team-pending-orders-list" class="space-y-4"></div>
+            <div id="team-orders-loading" class="text-center py-6">
                 <svg class="animate-spin h-6 w-6 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <p class="mt-2 text-gray-500" data-key="loading_my_orders">Loading my orders...</p>
+                <p class="mt-2 text-gray-500" data-key="loading_team_orders">Loading team orders...</p>
             </div>
         </div>
 
@@ -86,7 +93,6 @@
                 </div>
                 <div id="cart-items-container" class="p-6 overflow-y-auto"></div>
                 <div class="p-6 border-t mt-auto">
-                    <input type="hidden" id="editing-order-id">
                     <textarea id="order-notes" class="w-full p-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" data-key-placeholder="notes_placeholder"></textarea>
                     <div class="flex justify-end gap-4">
                         <button id="close-modal-btn-footer" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300" data-key="close">Close</button>
@@ -103,7 +109,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, serverTimestamp, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDIqmK_P2JWz3Vr5-u_2b6s6hhyWO9c-sg",
@@ -136,15 +142,14 @@
         const logoutBtn = document.getElementById('logout-btn');
         const toastContainer = document.getElementById('toast-container');
         const adminLink = document.getElementById('admin-link');
-        const myPendingOrdersList = document.getElementById('my-pending-orders-list');
-        const myOrdersLoading = document.getElementById('my-orders-loading');
-        const cartModalTitle = document.getElementById('cart-modal-title');
-        const editingOrderIdInput = document.getElementById('editing-order-id');
+        const teamPendingOrdersList = document.getElementById('team-pending-orders-list');
+        const teamOrdersLoading = document.getElementById('team-orders-loading');
         const placeOrderText = document.getElementById('place-order-text');
         const orderSpinner = document.getElementById('order-spinner');
         const langSwitcher = document.getElementById('lang-switcher');
 
-        let allProducts = [], myOrders = [], allDepartments = [];
+        let allProducts = [], allDepartments = [], allStaff = [];
+        let teamPendingOrders = [];
         let currentFilter = 'All';
         let cart = [];
         let currentUser, userDepartment;
@@ -156,8 +161,10 @@
                 main_subtitle: "Supply Order System",
                 admin_dashboard: "Admin",
                 logout: "Logout",
-                my_pending_orders: "My Orders",
-                loading_my_orders: "Loading my orders...",
+                my_orders: "My Orders",
+                create_order: "Create Order",
+                team_pending_orders: "Team's Pending Orders",
+                loading_team_orders: "Loading team orders...",
                 product_catalog: "Product Catalog",
                 search_placeholder: "Search for a product...",
                 loading_products: "Loading products...",
@@ -165,9 +172,6 @@
                 notes_placeholder: "Add any special notes for this order...",
                 close: "Close",
                 place_order: "Place Order",
-                update_order: "Update Order",
-                delete_order: "Delete Order",
-                edit_my_order: "Edit My Order",
                 logged_in_as: "Logged in as:"
             },
             th: {
@@ -175,8 +179,10 @@
                 main_subtitle: "ระบบสั่งซื้อวัตถุดิบ",
                 admin_dashboard: "แอดมิน",
                 logout: "ออกจากระบบ",
-                my_pending_orders: "คำสั่งซื้อของฉัน",
-                loading_my_orders: "กำลังโหลดคำสั่งซื้อของฉัน...",
+                my_orders: "คำสั่งซื้อของฉัน",
+                create_order: "สร้างคำสั่งซื้อ",
+                team_pending_orders: "คำสั่งซื้อที่รอดำเนินการของทีม",
+                loading_team_orders: "กำลังโหลดคำสั่งซื้อของทีม...",
                 product_catalog: "แคตตาล็อกสินค้า",
                 search_placeholder: "ค้นหาสินค้า...",
                 loading_products: "กำลังโหลดสินค้า...",
@@ -184,9 +190,6 @@
                 notes_placeholder: "เพิ่มหมายเหตุพิเศษสำหรับคำสั่งซื้อนี้...",
                 close: "ปิด",
                 place_order: "สั่งซื้อ",
-                update_order: "อัปเดตคำสั่งซื้อ",
-                delete_order: "ลบคำสั่งซื้อ",
-                edit_my_order: "แก้ไขคำสั่งซื้อของฉัน",
                 logged_in_as: "เข้าสู่ระบบในชื่อ:"
             }
         };
@@ -215,7 +218,7 @@
             });
             renderProducts();
             renderCategoryFilters();
-            renderMyPendingOrders();
+            renderTeamPendingOrders();
         }
 
         function showToast(message, isError = false) {
@@ -239,28 +242,14 @@
         function updateCart() {
             cartCount.textContent = cart.length;
             cartItemsContainer.innerHTML = '';
-            const isEditing = !!editingOrderIdInput.value;
-
+            
             if (cart.length === 0) {
                 cartItemsContainer.innerHTML = `<p class="text-gray-500 text-center">${currentLang === 'th' ? 'คำสั่งซื้อของคุณว่างเปล่า' : 'Your order is empty.'}</p>`;
-                if (isEditing) {
-                    placeOrderText.textContent = translations[currentLang].delete_order;
-                    placeOrderBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-                    placeOrderBtn.classList.add('bg-red-600', 'hover:bg-red-700');
-                    placeOrderBtn.disabled = false;
-                    placeOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                } else {
-                    placeOrderBtn.disabled = true;
-                    placeOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                }
+                placeOrderBtn.disabled = true;
+                placeOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
             } else {
                 placeOrderBtn.disabled = false; 
                 placeOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                 if (isEditing) {
-                    placeOrderText.textContent = translations[currentLang].update_order;
-                    placeOrderBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-                    placeOrderBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-                }
                 cart.forEach(item => {
                     const itemHtml = `<div class="flex items-center justify-between py-3 border-b last:border-b-0"><div><p class="font-semibold">${item[`productName_${currentLang}`] || item.productName}</p><p class="text-sm text-gray-500">${currentLang === 'th' ? 'ต่อ' : 'Per'} ${item[`packaging_${currentLang}`] || item.packaging}</p></div><div class="flex items-center gap-3"><button data-id="${item.productId}" class="quantity-btn decrease-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">-</button><span class="font-medium w-8 text-center">${item.quantity}</span><button data-id="${item.productId}" class="quantity-btn increase-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">+</button><button data-id="${item.productId}" class="remove-item text-red-500 hover:text-red-700 ml-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div></div>`;
                     cartItemsContainer.insertAdjacentHTML('beforeend', itemHtml);
@@ -282,12 +271,7 @@
 
         function resetCartState() {
             cart = [];
-            editingOrderIdInput.value = '';
             orderNotes.value = '';
-            cartModalTitle.textContent = translations[currentLang].current_order;
-            placeOrderText.textContent = translations[currentLang].place_order;
-            placeOrderBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-            placeOrderBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
             updateCart();
         }
 
@@ -332,32 +316,16 @@
         
         async function handlePlaceOrder() {
             if (!userDepartment) { showToast(currentLang === 'th' ? 'ไม่ได้กำหนดแผนก' : 'Department not assigned.', true); return; }
-            const editingOrderId = editingOrderIdInput.value;
-
-            if (cart.length === 0 && !editingOrderId) {
-                 showToast(currentLang === 'th' ? 'คำสั่งซื้อของคุณว่างเปล่า' : 'Your order is empty.', true); return;
-            }
+            if (cart.length === 0) { showToast(currentLang === 'th' ? 'คำสั่งซื้อของคุณว่างเปล่า' : 'Your order is empty.', true); return; }
 
             placeOrderBtn.disabled = true; 
             placeOrderText.classList.add('hidden'); 
             orderSpinner.classList.remove('hidden');
 
             try {
-                if (editingOrderId) {
-                    const orderRef = doc(db, "orders", editingOrderId);
-                    if (cart.length === 0) {
-                        await deleteDoc(orderRef);
-                        showToast(currentLang === 'th' ? 'ลบคำสั่งซื้อสำเร็จ' : 'Order deleted successfully!');
-                    } else {
-                        const orderData = { items: cart, notes: orderNotes.value.trim(), updatedAt: serverTimestamp() };
-                        await updateDoc(orderRef, orderData);
-                        showToast(currentLang === 'th' ? 'อัปเดตคำสั่งซื้อสำเร็จ' : 'Order updated successfully!');
-                    }
-                } else {
-                    const orderData = { departmentId: userDepartment.id, departmentName: userDepartment.name_en, departmentName_th: userDepartment.name_th, status: "Pending", notes: orderNotes.value.trim(), items: cart, userId: currentUser.uid, createdAt: serverTimestamp() };
-                    await addDoc(collection(db, "orders"), orderData);
-                    showToast(currentLang === 'th' ? 'สั่งซื้อสำเร็จ' : 'Order placed successfully!');
-                }
+                const orderData = { departmentId: userDepartment.id, departmentName: userDepartment.name_en, departmentName_th: userDepartment.name_th, status: "Pending", notes: orderNotes.value.trim(), items: cart, userId: currentUser.uid, createdAt: serverTimestamp() };
+                await addDoc(collection(db, "orders"), orderData);
+                showToast(currentLang === 'th' ? 'สั่งซื้อสำเร็จ' : 'Order placed successfully!');
                 toggleModal(false);
                 resetCartState();
             } catch (error) { 
@@ -370,86 +338,47 @@
             }
         }
 
-        function renderMyPendingOrders() {
-            myPendingOrdersList.innerHTML = '';
-            if (myOrders.length === 0) {
-                myPendingOrdersList.innerHTML = `<div class="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">${currentLang === 'th' ? 'คุณไม่มีคำสั่งซื้อ' : 'You have no orders.'}</div>`;
+        function renderTeamPendingOrders() {
+            teamPendingOrdersList.innerHTML = '';
+            if (teamPendingOrders.length === 0) {
+                teamPendingOrdersList.innerHTML = `<div class="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">${currentLang === 'th' ? 'ไม่มีคำสั่งซื้อที่รอดำเนินการในทีมของคุณ' : 'No pending orders in your team.'}</div>`;
                 return;
             }
-            myOrders.forEach(order => {
+            teamPendingOrders.forEach(order => {
+                const user = allStaff.find(u => u.id === order.userId);
+                const userName = user ? user.name : 'Unknown';
                 const itemsHtml = order.items.map(item => `<li class="text-gray-600">${item.quantity} x ${item[`productName_${currentLang}`] || item.productName}</li>`).join('');
-                const orderDate = order.createdAt?.toDate().toLocaleDateString() || 'N/A';
-                const statusText = order.status || 'Pending';
-                let statusClass = 'text-yellow-600 bg-yellow-100';
-                if(statusText === 'Cancelled') statusClass = 'text-red-600 bg-red-100';
-                if(statusText === 'Processed') statusClass = 'text-green-600 bg-green-100';
-
                 const orderHtml = `
                     <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="font-bold">${currentLang === 'th' ? 'คำสั่งซื้อจาก' : 'Order from'} ${orderDate} <span class="text-sm font-medium px-2 py-1 rounded-full ${statusClass}">${statusText}</span></p>
-                                <ul class="list-disc list-inside mt-2">${itemsHtml}</ul>
-                                ${order.notes ? `<p class="text-sm text-gray-500 mt-2"><strong>${currentLang === 'th' ? 'หมายเหตุ' : 'Notes'}:</strong> ${order.notes}</p>` : ''}
-                            </div>
-                            <div class="flex gap-2">
-                                ${order.status === 'Pending' ? `
-                                <button data-id="${order.id}" class="edit-my-order-btn text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200">${currentLang === 'th' ? 'แก้ไข' : 'Edit'}</button>
-                                <button data-id="${order.id}" class="delete-my-order-btn text-sm bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200">${currentLang === 'th' ? 'ลบ' : 'Delete'}</button>
-                                ` : ''}
-                            </div>
-                        </div>
+                        <p class="font-bold">${userName}</p>
+                        <ul class="list-disc list-inside mt-2">${itemsHtml}</ul>
                     </div>
                 `;
-                myPendingOrdersList.insertAdjacentHTML('beforeend', orderHtml);
+                teamPendingOrdersList.insertAdjacentHTML('beforeend', orderHtml);
             });
         }
 
-        function fetchMyPendingOrders() {
-            if (!currentUser) return;
-            myOrdersLoading.classList.remove('hidden');
-            const q = query(collection(db, "orders"), where("userId", "==", currentUser.uid));
+        function fetchTeamPendingOrders() {
+            if (!userDepartment) return;
+            teamOrdersLoading.classList.remove('hidden');
+            const q = query(collection(db, "orders"), where("departmentId", "==", userDepartment.id), where("status", "==", "Pending"));
             onSnapshot(q, (snapshot) => {
-                myOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                myOrders.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-                myOrdersLoading.classList.add('hidden');
-                renderMyPendingOrders();
+                teamPendingOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                teamOrdersLoading.classList.add('hidden');
+                renderTeamPendingOrders();
             }, (error) => {
-                console.error("Error fetching my orders:", error);
-                myOrdersLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดคำสั่งซื้อของคุณได้' : 'Could not load your orders.'}</p>`;
+                console.error("Error fetching team orders:", error);
+                teamOrdersLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดคำสั่งซื้อของทีมได้' : 'Could not load team orders.'}</p>`;
             });
         }
         
-        async function handleEditMyOrder(orderId) {
-            const order = myOrders.find(o => o.id === orderId);
-            if (!order) return;
-            cart = JSON.parse(JSON.stringify(order.items)); 
-            orderNotes.value = order.notes || '';
-            editingOrderIdInput.value = order.id;
-            cartModalTitle.textContent = translations[currentLang].edit_my_order;
-            placeOrderText.textContent = translations[currentLang].update_order;
-            updateCart();
-            toggleModal(true);
-        }
-
-        async function handleDeleteMyOrder(orderId) {
-            if (confirm(currentLang === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบคำสั่งซื้อนี้?' : 'Are you sure you want to delete this order?')) {
-                try {
-                    await deleteDoc(doc(db, "orders", orderId));
-                    showToast(currentLang === 'th' ? 'ลบคำสั่งซื้อสำเร็จ' : 'Order deleted successfully.');
-                } catch (error) {
-                    console.error("Error deleting order:", error);
-                    showToast(currentLang === 'th' ? 'ไม่สามารถลบคำสั่งซื้อได้' : 'Could not delete order.', true);
-                }
-            }
-        }
-        
-        function fetchAllDepartments() {
-             onSnapshot(collection(db, "departments"), (snapshot) => {
-                allDepartments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        function fetchAllStaff() {
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                allStaff = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderTeamPendingOrders();
             });
         }
-
+        
         async function initializeAppForUser(user) {
             currentUser = user;
             const userDocRef = doc(db, "users", user.uid);
@@ -468,14 +397,14 @@
                         const departmentDoc = await getDoc(departmentDocRef);
                         if (departmentDoc.exists()) {
                             userDepartment = { id: departmentDoc.id, ...departmentDoc.data() };
+                            fetchAllStaff();
+                            fetchTeamPendingOrders();
                         } else { showToast("Assigned department not found.", true); }
                     } else { showToast("User has no assigned department.", true); }
                 } else { showToast("User profile not found in database.", true); }
             } catch (error) { console.error("Error fetching user data:", error); showToast("Could not fetch user data.", true); }
             appContainer.classList.remove('hidden');
-            fetchAllDepartments();
             fetchProducts();
-            fetchMyPendingOrders();
             updateCart();
         }
         
@@ -491,13 +420,6 @@
         langSwitcher.addEventListener('click', (e) => {
             const lang = e.target.dataset.lang;
             if (lang) { setLanguage(lang); }
-        });
-
-        myPendingOrdersList.addEventListener('click', (e) => {
-            const editBtn = e.target.closest('.edit-my-order-btn');
-            const deleteBtn = e.target.closest('.delete-my-order-btn');
-            if (editBtn) handleEditMyOrder(editBtn.dataset.id);
-            if (deleteBtn) handleDeleteMyOrder(deleteBtn.dataset.id);
         });
 
         searchInput.addEventListener('input', renderProducts);
@@ -522,32 +444,25 @@
         });
         placeOrderBtn.addEventListener('click', handlePlaceOrder);
         cartButton.addEventListener('click', () => {
-            if(editingOrderIdInput.value) {
-                resetCartState();
-            }
-            cartModalTitle.textContent = translations[currentLang].current_order;
-            placeOrderText.textContent = translations[currentLang].place_order;
             updateCart();
             toggleModal(true);
         });
-        closeModalBtn.addEventListener('click', () => {
-            toggleModal(false);
-            resetCartState();
-        });
-        closeModalBtnFooter.addEventListener('click', () => {
-             toggleModal(false);
-             resetCartState();
-        });
-        cartModal.addEventListener('click', (e) => { 
-            if (e.target === cartModal) {
-                toggleModal(false);
-                resetCartState();
-            }
-        });
+        closeModalBtn.addEventListener('click', () => toggleModal(false));
+        closeModalBtnFooter.addEventListener('click', () => toggleModal(false));
+        cartModal.addEventListener('click', (e) => { if (e.target === cartModal) toggleModal(false); });
         logoutBtn.addEventListener('click', () => { 
             signOut(auth);
             localStorage.removeItem('appLanguage');
         });
+
+        // Check for a reorder request from localStorage
+        const reorderData = localStorage.getItem('reorderCart');
+        if (reorderData) {
+            cart = JSON.parse(reorderData);
+            localStorage.removeItem('reorderCart');
+            updateCart();
+            toggleModal(true);
+        }
     </script>
 </body>
 </html>

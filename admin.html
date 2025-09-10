@@ -68,11 +68,25 @@
         
         <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
             <h2 class="text-3xl font-bold mb-6 text-gray-700" data-key="order_history">Order History</h2>
-            <div id="order-history-list" class="space-y-4"></div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                     <thead class="bg-gray-200">
+                        <tr>
+                            <th class="table-cell text-left font-semibold text-gray-600" data-key="date">Date</th>
+                            <th class="table-cell text-left font-semibold text-gray-600" data-key="department">Department</th>
+                            <th class="table-cell text-left font-semibold text-gray-600" data-key="user">User</th>
+                            <th class="table-cell text-left font-semibold text-gray-600" data-key="items">Items</th>
+                             <th class="table-cell text-left font-semibold text-gray-600" data-key="status">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-history-table-body"></tbody>
+                </table>
+            </div>
              <div id="history-loading" class="text-center py-10">
                 <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 <p class="mt-2 text-gray-500" data-key="loading_history">Loading history...</p>
             </div>
+            <div id="history-pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
@@ -98,6 +112,7 @@
                     <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     <p class="mt-2 text-gray-500" data-key="loading_products">Loading products...</p>
                 </div>
+                 <div id="products-pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
             </div>
         </div>
 
@@ -121,6 +136,7 @@
                     <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     <p class="mt-2 text-gray-500" data-key="loading_staff">Loading staff...</p>
                 </div>
+                <div id="staff-pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
             </div>
         </div>
 
@@ -144,6 +160,7 @@
                     <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     <p class="mt-2 text-gray-500" data-key="loading_departments">Loading departments...</p>
                 </div>
+                <div id="departments-pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
             </div>
         </div>
     </div>
@@ -205,7 +222,7 @@
         </div>
     </div>
     <div id="department-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg">
+       <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg">
             <div class="flex justify-between items-center p-4 border-b">
                 <h2 id="department-modal-title" class="text-2xl font-bold text-gray-800" data-key="add_new_department">Add New Department</h2>
                 <button id="close-department-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
@@ -227,7 +244,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, onSnapshot, doc, getDoc, writeBatch, addDoc, updateDoc, deleteDoc, setDoc, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, getDoc, writeBatch, addDoc, updateDoc, deleteDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDIqmK_P2JWz3Vr5-u_2b6s6hhyWO9c-sg",
@@ -241,6 +258,9 @@
         let db, auth;
         let pendingOrders = [], allProducts = [], allStaff = [], allDepartments = [], processedOrders = [];
         let currentLang = localStorage.getItem('appLanguage') || 'en';
+
+        let productsCurrentPage = 1, staffCurrentPage = 1, deptsCurrentPage = 1, historyCurrentPage = 1;
+        const itemsPerPage = 10;
         
         const appContainer = document.getElementById('app');
         const userDisplay = document.getElementById('user-display');
@@ -251,10 +271,12 @@
         const ordersLoading = document.getElementById('orders-loading');
         const generateListBtn = document.getElementById('generate-list-btn');
         const supplierListContainer = document.getElementById('supplier-list-container');
-        const orderHistoryList = document.getElementById('order-history-list');
+        const orderHistoryTableBody = document.getElementById('order-history-table-body');
         const historyLoading = document.getElementById('history-loading');
+        const historyPaginationControls = document.getElementById('history-pagination-controls');
         const productsTableBody = document.getElementById('products-table-body');
         const productsLoading = document.getElementById('products-loading');
+        const productsPaginationControls = document.getElementById('products-pagination-controls');
         const addProductBtn = document.getElementById('add-product-btn');
         const productModal = document.getElementById('product-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
@@ -263,6 +285,7 @@
         const addStaffBtn = document.getElementById('add-staff-btn');
         const staffTableBody = document.getElementById('staff-table-body');
         const staffLoading = document.getElementById('staff-loading');
+        const staffPaginationControls = document.getElementById('staff-pagination-controls');
         const staffModal = document.getElementById('staff-modal');
         const closeStaffModalBtn = document.getElementById('close-staff-modal-btn');
         const staffForm = document.getElementById('staff-form');
@@ -271,6 +294,7 @@
         const addDepartmentBtn = document.getElementById('add-department-btn');
         const departmentsTableBody = document.getElementById('departments-table-body');
         const departmentsLoading = document.getElementById('departments-loading');
+        const departmentsPaginationControls = document.getElementById('departments-pagination-controls');
         const departmentModal = document.getElementById('department-modal');
         const closeDepartmentModalBtn = document.getElementById('close-department-modal-btn');
         const departmentForm = document.getElementById('department-form');
@@ -291,6 +315,9 @@
                 generate_supplier_list: "Generate Supplier List",
                 order_history: "Order History",
                 loading_history: "Loading history...",
+                date: "Date",
+                user: "User",
+                items: "Items",
                 product_management: "Product Management",
                 add_new_product: "Add New Product",
                 image: "Image",
@@ -342,6 +369,9 @@
                 generate_supplier_list: "สร้างรายชื่อซัพพลายเออร์",
                 order_history: "ประวัติคำสั่งซื้อ",
                 loading_history: "กำลังโหลดประวัติ...",
+                date: "วันที่",
+                user: "ผู้ใช้",
+                items: "รายการ",
                 product_management: "การจัดการสินค้า",
                 add_new_product: "เพิ่มสินค้าใหม่",
                 image: "รูปภาพ",
@@ -501,32 +531,34 @@
         }
         
         function renderOrderHistory() {
-             orderHistoryList.innerHTML = '';
+             orderHistoryTableBody.innerHTML = '';
             if (processedOrders.length === 0) {
-                orderHistoryList.innerHTML = `<p class="text-gray-500">${currentLang === 'th' ? 'ไม่มีประวัติคำสั่งซื้อ' : 'No order history found.'}</p>`;
+                orderHistoryTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">${currentLang === 'th' ? 'ไม่มีประวัติคำสั่งซื้อ' : 'No order history found.'}</td></tr>`;
+                historyPaginationControls.innerHTML = '';
                 return;
             }
 
-            const ordersByDate = processedOrders.reduce((acc, order) => {
-                const date = order.createdAt.toDate().toLocaleDateString();
-                if(!acc[date]) acc[date] = [];
-                acc[date].push(order);
-                return acc;
-            }, {});
+            const startIndex = (historyCurrentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedOrders = processedOrders.slice(startIndex, endIndex);
 
-            let html = '';
-            for(const date in ordersByDate) {
-                html += `<div class="border rounded-lg p-4"><h3 class="font-bold text-lg">${date}</h3>`;
-                ordersByDate[date].forEach(order => {
-                    const user = allStaff.find(s => s.id === order.userId);
-                    const userName = user ? user.name : 'Unknown User';
-                    const itemsHtml = order.items.map(item => `<li>${item.quantity} x ${item.productName}</li>`).join('');
-                    const statusClass = order.status === 'Cancelled' ? 'text-red-500' : 'text-gray-500';
-                    html += `<div class="mt-2 pl-4"><p class="font-semibold text-md">${order.departmentName} - ${userName} <span class="text-sm font-normal ${statusClass}">(${order.status})</span></p><ul class="list-disc list-inside text-gray-600">${itemsHtml}</ul></div>`;
-                });
-                html += `</div>`;
-            }
-            orderHistoryList.innerHTML = html;
+            paginatedOrders.forEach(order => {
+                const user = allStaff.find(s => s.id === order.userId);
+                const userName = user ? user.name : 'Unknown User';
+                const itemsHtml = order.items.map(item => `<span>${item.quantity} x ${item.productName}</span>`).join(', ');
+                const statusClass = order.status === 'Cancelled' ? 'text-red-500' : 'text-gray-500';
+                 const row = `
+                    <tr class="border-b">
+                        <td class="table-cell">${order.createdAt.toDate().toLocaleDateString()}</td>
+                        <td class="table-cell">${order[`departmentName_${currentLang}`] || order.departmentName}</td>
+                        <td class="table-cell">${userName}</td>
+                        <td class="table-cell text-sm">${itemsHtml}</td>
+                        <td class="table-cell"><span class="${statusClass}">${order.status}</span></td>
+                    </tr>
+                `;
+                orderHistoryTableBody.insertAdjacentHTML('beforeend', row);
+            });
+            renderPaginationControls('history', processedOrders.length);
         }
 
         async function markOrdersAsProcessed() {
@@ -541,9 +573,10 @@
         
         function fetchProcessedOrders() {
             historyLoading.classList.remove('hidden');
-            const q = query(collection(db, "orders"), where("status", "!=", "Pending"), orderBy("status"), orderBy("createdAt", "desc"), limit(50));
+            const q = query(collection(db, "orders"), where("status", "!=", "Pending"));
             onSnapshot(q, (snapshot) => {
                 processedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                processedOrders.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
                 historyLoading.classList.add('hidden');
                 renderOrderHistory();
             }, (error) => {
@@ -566,8 +599,13 @@
 
         function renderProductsTable() {
             productsTableBody.innerHTML = '';
-            if (allProducts.length === 0) { productsTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">${currentLang === 'th' ? 'ไม่พบสินค้า' : 'No products found.'}</td></tr>`; return; }
-            allProducts.sort((a, b) => a[`name_${currentLang}`].localeCompare(b[`name_${currentLang}`])).forEach(product => {
+            if (allProducts.length === 0) { productsTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">${currentLang === 'th' ? 'ไม่พบสินค้า' : 'No products found.'}</td></tr>`; productsPaginationControls.innerHTML = ''; return; }
+            
+            const startIndex = (productsCurrentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedProducts = allProducts.slice(startIndex, endIndex);
+
+            paginatedProducts.forEach(product => {
                 const statusClass = product.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
                 const row = `<tr class="border-b">
                         <td class="table-cell"><img src="${product.imageUrl || 'https://placehold.co/100x100/e2e8f0/64748b?text=No+Img'}" class="h-12 w-12 object-cover rounded"></td>
@@ -581,12 +619,14 @@
                         </td></tr>`;
                 productsTableBody.insertAdjacentHTML('beforeend', row);
             });
+            renderPaginationControls('products', allProducts.length);
         }
 
         function fetchAllProducts() {
             productsLoading.classList.remove('hidden');
             onSnapshot(collection(db, "products"), (snapshot) => {
                 allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                allProducts.sort((a,b) => a.name_en.localeCompare(b.name_en));
                 productsLoading.classList.add('hidden'); renderProductsTable();
             }, (error) => {
                 console.error("Error fetching products: ", error);
@@ -632,9 +672,15 @@
             staffTableBody.innerHTML = '';
             if (allStaff.length === 0) {
                 staffTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${currentLang === 'th' ? 'ไม่พบพนักงาน' : 'No staff members found.'}</td></tr>`;
+                staffPaginationControls.innerHTML = '';
                 return;
             }
-            allStaff.forEach(staff => {
+            
+            const startIndex = (staffCurrentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedStaff = allStaff.slice(startIndex, endIndex);
+
+            paginatedStaff.forEach(staff => {
                 const department = allDepartments.find(d => d.id === staff.departmentId);
                 const departmentName = department ? department[`name_${currentLang}`] : 'N/A';
                 const row = `
@@ -649,6 +695,7 @@
                 `;
                 staffTableBody.insertAdjacentHTML('beforeend', row);
             });
+            renderPaginationControls('staff', allStaff.length);
         }
         
         async function handleDeleteStaff(staffId) {
@@ -720,9 +767,15 @@
             departmentsTableBody.innerHTML = '';
             if (allDepartments.length === 0) {
                 departmentsTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${currentLang === 'th' ? 'ไม่พบแผนก' : 'No departments found.'}</td></tr>`;
+                departmentsPaginationControls.innerHTML = '';
                 return;
             }
-            allDepartments.forEach(dept => {
+
+            const startIndex = (deptsCurrentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedDepts = allDepartments.slice(startIndex, endIndex);
+
+            paginatedDepts.forEach(dept => {
                 const row = `
                     <tr class="border-b">
                         <td class="table-cell font-medium">${dept.name_en || ''}</td>
@@ -735,12 +788,14 @@
                 `;
                 departmentsTableBody.insertAdjacentHTML('beforeend', row);
             });
+            renderPaginationControls('departments', allDepartments.length);
         }
         
         function fetchAllDepartments() {
             departmentsLoading.classList.remove('hidden');
             onSnapshot(collection(db, "departments"), (snapshot) => {
                 allDepartments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                allDepartments.sort((a, b) => a.name_en.localeCompare(b.name_en));
                 departmentsLoading.classList.add('hidden');
                 staffDepartmentSelect.innerHTML = `<option value="">${currentLang === 'th' ? 'เลือกแผนก' : 'Select a department'}</option>`;
                 allDepartments.forEach(dept => {
@@ -812,6 +867,54 @@
             }
         }
         
+        function renderPaginationControls(type, totalItems) {
+            const controls = document.getElementById(`${type}-pagination-controls`);
+            if(!controls) return;
+            controls.innerHTML = '';
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            let currentPage;
+            if (type === 'products') currentPage = productsCurrentPage;
+            if (type === 'staff') currentPage = staffCurrentPage;
+            if (type === 'departments') currentPage = deptsCurrentPage;
+            if (type === 'history') currentPage = historyCurrentPage;
+
+            if (totalPages <= 1) return;
+
+            const prevButton = `<button data-type="${type}" data-action="prev" class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50" ${currentPage === 1 ? 'disabled' : ''}>&lt;</button>`;
+            const pageInfo = `<span>Page ${currentPage} of ${totalPages}</span>`;
+            const nextButton = `<button data-type="${type}" data-action="next" class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50" ${currentPage === totalPages ? 'disabled' : ''}>&gt;</button>`;
+            controls.innerHTML = prevButton + pageInfo + nextButton;
+        }
+
+        function handlePaginationClick(e) {
+            const button = e.target.closest('button');
+            if (!button || !button.dataset.type) return;
+
+            const type = button.dataset.type;
+            const action = button.dataset.action;
+            let currentPage, totalItems, renderFn;
+
+            if(type === 'products') { currentPage = productsCurrentPage; totalItems = allProducts.length; renderFn = renderProductsTable; }
+            if(type === 'staff') { currentPage = staffCurrentPage; totalItems = allStaff.length; renderFn = renderStaffTable; }
+            if(type === 'departments') { currentPage = deptsCurrentPage; totalItems = allDepartments.length; renderFn = renderDepartmentsTable; }
+            if(type === 'history') { currentPage = historyCurrentPage; totalItems = processedOrders.length; renderFn = renderOrderHistory; }
+
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+            if (action === 'prev' && currentPage > 1) {
+                currentPage--;
+            } else if (action === 'next' && currentPage < totalPages) {
+                currentPage++;
+            }
+
+            if(type === 'products') productsCurrentPage = currentPage;
+            if(type === 'staff') staffCurrentPage = currentPage;
+            if(type === 'departments') deptsCurrentPage = currentPage;
+            if(type === 'history') historyCurrentPage = currentPage;
+            
+            renderFn();
+        }
+
         function initialize() {
             try {
                 const app = initializeApp(firebaseConfig);
@@ -896,6 +999,11 @@
             if (editBtn) { const dept = allDepartments.find(d => d.id === editBtn.dataset.id); toggleDepartmentModal(true, dept); }
             if (deleteBtn) { handleDeleteDepartment(deleteBtn.dataset.id); }
         });
+        
+        productsPaginationControls.addEventListener('click', handlePaginationClick);
+        staffPaginationControls.addEventListener('click', handlePaginationClick);
+        departmentsPaginationControls.addEventListener('click', handlePaginationClick);
+        historyPaginationControls.addEventListener('click', handlePaginationClick);
 
         initialize();
     </script>
