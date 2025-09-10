@@ -6,6 +6,7 @@
     <title>Admin Dashboard - Da Moreno Orders</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://fav.farm/🇮🇹" />
     <style>
         body { font-family: 'Inter', sans-serif; }
         .modal-open { overflow: hidden; }
@@ -15,6 +16,11 @@
         .toast.show { transform: translateX(0); }
         .lang-btn.active { background-color: #2563eb; color: white; }
         .lang-btn:not(.active) { background-color: #e5e7eb; color: #374151; }
+        .details-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -40,8 +46,19 @@
                         <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
                         <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
                     </div>
-                    <a href="./index.html" class="flex-1 justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-center" data-key="catalog">Catalog</a>
-                    <button id="logout-btn" class="flex-1 justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" data-key="logout">Logout</button>
+                     <div class="relative sm:hidden">
+                        <button id="menu-button" class="p-2 rounded-md hover:bg-gray-200">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                        </button>
+                        <div id="mobile-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                            <a href="./index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="catalog">Catalog</a>
+                            <button id="logout-btn-mobile" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="logout">Logout</button>
+                        </div>
+                    </div>
+                    <div class="hidden sm:flex items-center gap-2">
+                        <a href="./index.html" class="flex-1 justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-center" data-key="catalog">Catalog</a>
+                        <button id="logout-btn" class="flex-1 justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" data-key="logout">Logout</button>
+                    </div>
                  </div>
             </div>
         </header>
@@ -90,9 +107,12 @@
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
                  <h2 class="text-3xl font-bold text-gray-700" data-key="product_management">Product Management</h2>
-                 <button id="add-product-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 whitespace-nowrap" data-key="add_new_product">Add New Product</button>
+                 <button id="add-product-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                    <span class="sm:hidden lg:inline" data-key="add_new_product">Add New Product</span>
+                 </button>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white">
@@ -117,9 +137,12 @@
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
                  <h2 class="text-3xl font-bold text-gray-700" data-key="staff_management">Staff Management</h2>
-                 <button id="add-staff-btn" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 whitespace-nowrap" data-key="add_staff_member">Add Staff Member</button>
+                 <button id="add-staff-btn" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 flex items-center gap-2">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 11a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1v-1z" /></svg>
+                    <span class="sm:hidden lg:inline" data-key="add_staff_member">Add Staff Member</span>
+                </button>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white">
@@ -141,9 +164,12 @@
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-sm">
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
                  <h2 class="text-3xl font-bold text-gray-700" data-key="department_management">Department Management</h2>
-                 <button id="add-department-btn" class="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 whitespace-nowrap" data-key="add_new_department">Add New Department</button>
+                 <button id="add-department-btn" class="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                    <span class="sm:hidden lg:inline" data-key="add_new_department">Add New Department</span>
+                </button>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white">
@@ -265,6 +291,7 @@
         const appContainer = document.getElementById('app');
         const userDisplay = document.getElementById('user-display');
         const logoutBtn = document.getElementById('logout-btn');
+        const logoutBtnMobile = document.getElementById('logout-btn-mobile');
         const toastContainer = document.getElementById('toast-container');
         const accessDeniedMessage = document.getElementById('access-denied');
         const pendingOrdersList = document.getElementById('pending-orders-list');
@@ -300,6 +327,8 @@
         const departmentForm = document.getElementById('department-form');
         const cancelDepartmentFormBtn = document.getElementById('cancel-department-form');
         const langSwitcher = document.getElementById('lang-switcher');
+        const menuButton = document.getElementById('menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
 
         const translations = {
             en: {
@@ -963,10 +992,23 @@
             }
         });
 
-        logoutBtn.addEventListener('click', () => {
+        menuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!menuButton.contains(e.target) && !mobileMenu.contains(e.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+
+        const logout = () => {
             signOut(auth);
             localStorage.removeItem('appLanguage');
-        });
+        }
+        logoutBtn.addEventListener('click', logout);
+        logoutBtnMobile.addEventListener('click', logout);
+
         generateListBtn.addEventListener('click', generateSupplierList);
         supplierListContainer.addEventListener('click', (e) => { if (e.target.id === 'mark-processed-btn') markOrdersAsProcessed(); });
         addProductBtn.addEventListener('click', () => toggleProductModal(true));

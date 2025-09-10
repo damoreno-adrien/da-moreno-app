@@ -6,6 +6,7 @@
     <title>Create Order - Da Moreno</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://fav.farm/🇮🇹" />
     <style>
         body { font-family: 'Inter', sans-serif; }
         ::-webkit-scrollbar { width: 8px; }
@@ -40,8 +41,19 @@
                             <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
                             <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
                         </div>
-                        <a href="./admin.html" id="admin-link" class="hidden flex-1 sm:flex-none justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700" data-key="admin_dashboard">Admin</a>
-                        <button id="logout-btn" class="flex-1 sm:flex-none justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" data-key="logout">Logout</button>
+                         <div class="relative sm:hidden">
+                            <button id="menu-button" class="p-2 rounded-md hover:bg-gray-200">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                            </button>
+                            <div id="mobile-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                                <a href="./admin.html" id="admin-link-mobile" class="hidden block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="admin_dashboard">Admin</a>
+                                <button id="logout-btn-mobile" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="logout">Logout</button>
+                            </div>
+                        </div>
+                        <div class="hidden sm:flex items-center gap-2">
+                            <a href="./admin.html" id="admin-link" class="hidden flex-1 sm:flex-none justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700" data-key="admin_dashboard">Admin</a>
+                            <button id="logout-btn" class="flex-1 sm:flex-none justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" data-key="logout">Logout</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -140,13 +152,17 @@
         const placeOrderBtn = document.getElementById('place-order-btn');
         const orderNotes = document.getElementById('order-notes');
         const logoutBtn = document.getElementById('logout-btn');
+        const logoutBtnMobile = document.getElementById('logout-btn-mobile');
         const toastContainer = document.getElementById('toast-container');
         const adminLink = document.getElementById('admin-link');
+        const adminLinkMobile = document.getElementById('admin-link-mobile');
         const teamPendingOrdersList = document.getElementById('team-pending-orders-list');
         const teamOrdersLoading = document.getElementById('team-orders-loading');
         const placeOrderText = document.getElementById('place-order-text');
         const orderSpinner = document.getElementById('order-spinner');
         const langSwitcher = document.getElementById('lang-switcher');
+        const menuButton = document.getElementById('menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
 
         let allProducts = [], allDepartments = [], allStaff = [];
         let teamPendingOrders = [];
@@ -391,6 +407,7 @@
                     }
                     if (userData.departmentId === 'qu76BRyA9CS1XTqSay4X') {
                         adminLink.classList.remove('hidden');
+                        adminLinkMobile.classList.remove('hidden');
                     }
                     if (userData.departmentId) {
                         const departmentDocRef = doc(db, "departments", userData.departmentId);
@@ -422,6 +439,16 @@
             if (lang) { setLanguage(lang); }
         });
 
+        menuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!menuButton.contains(e.target) && !mobileMenu.contains(e.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+
         searchInput.addEventListener('input', renderProducts);
         categoryFiltersContainer.addEventListener('click', (e) => { 
             const btn = e.target.closest('.category-filter-btn');
@@ -450,12 +477,14 @@
         closeModalBtn.addEventListener('click', () => toggleModal(false));
         closeModalBtnFooter.addEventListener('click', () => toggleModal(false));
         cartModal.addEventListener('click', (e) => { if (e.target === cartModal) toggleModal(false); });
-        logoutBtn.addEventListener('click', () => { 
+        
+        const logout = () => {
             signOut(auth);
             localStorage.removeItem('appLanguage');
-        });
+        }
+        logoutBtn.addEventListener('click', logout);
+        logoutBtnMobile.addEventListener('click', logout);
 
-        // Check for a reorder request from localStorage
         const reorderData = localStorage.getItem('reorderCart');
         if (reorderData) {
             cart = JSON.parse(reorderData);
