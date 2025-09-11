@@ -406,7 +406,7 @@
                 order_history: "Order History",
                 loading_history: "Loading history...",
                 product_management: "Product Management",
-                add_new_product: "Add New Product",
+                add_new_product: "Add Product",
                 image: "Image",
                 product_name: "Product Name",
                 reference: "Reference",
@@ -634,7 +634,7 @@
         }
         
         function renderOrderHistory() {
-            orderHistoryTableBody.innerHTML = '';
+             orderHistoryTableBody.innerHTML = '';
             const totalPages = Math.ceil(processedOrders.length / itemsPerPage);
             const startIndex = (historyCurrentPage - 1) * itemsPerPage;
             const paginatedOrders = processedOrders.slice(startIndex, startIndex + itemsPerPage);
@@ -682,9 +682,11 @@
         
         function fetchProcessedOrders() {
             historyLoading.classList.remove('hidden');
-            const q = query(collection(db, "orders"), where("status", "!=", "Pending"), orderBy("status"), orderBy("createdAt", "desc"));
+            const q = query(collection(db, "orders"), where("status", "!=", "Pending"));
             onSnapshot(q, (snapshot) => {
-                processedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                let orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                orders.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                processedOrders = orders;
                 historyLoading.classList.add('hidden');
                 renderOrderHistory();
             }, (error) => {
@@ -811,64 +813,300 @@
         }
 
         function renderStaffTable() {
-            // ... (code is the same, omitted for brevity)
+            staffTableBody.innerHTML = '';
+            const totalPages = Math.ceil(allStaff.length / itemsPerPage);
+            const startIndex = (staffCurrentPage - 1) * itemsPerPage;
+            const paginatedStaff = allStaff.slice(startIndex, startIndex + itemsPerPage);
+
+            if (paginatedStaff.length === 0) {
+                staffTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${currentLang === 'th' ? 'ไม่พบพนักงาน' : 'No staff members found.'}</td></tr>`;
+            } else {
+                 paginatedStaff.forEach(staff => {
+                    const department = allDepartments.find(d => d.id === staff.departmentId);
+                    const departmentName = department ? department[`name_${currentLang}`] : 'N/A';
+                    const row = `
+                        <tr class="border-b">
+                            <td class="table-cell font-medium">${staff.name || 'N/A'}</td>
+                            <td class="table-cell text-gray-600">${departmentName}</td>
+                            <td class="table-cell">
+                                <button data-id="${staff.id}" class="edit-staff-btn text-blue-600 hover:underline"><span class="hidden sm:inline">${currentLang === 'th' ? 'แก้ไข' : 'Edit'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                <button data-id="${staff.id}" class="delete-staff-btn text-red-600 hover:underline ml-4"><span class="hidden sm:inline">${currentLang === 'th' ? 'ลบ' : 'Delete'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                            </td>
+                        </tr>
+                    `;
+                    staffTableBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+            renderPagination('staff', staffPaginationControls, totalPages, staffCurrentPage, (page) => {
+                staffCurrentPage = page;
+                renderStaffTable();
+            });
         }
         
         async function handleDeleteStaff(staffId) {
-            // ... (code is the same, omitted for brevity)
+            if (confirm(currentLang === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบพนักงานคนนี้ออกจากแอป? การกระทำนี้จะไม่ลบข้อมูลการเข้าสู่ระบบของพวกเขา คุณต้องทำเช่นนั้นจากคอนโซล Firebase Authentication' : 'Are you sure you want to remove this staff member from the app? This will not delete their login credential. You must do that from the Firebase Authentication console.')) {
+                try {
+                    await deleteDoc(doc(db, "users", staffId));
+                    showToast(currentLang === 'th' ? 'ลบพนักงานออกจากแอปแล้ว' : 'Staff member removed from the app.');
+                } catch (error) {
+                    console.error("Error deleting staff:", error);
+                    showToast(currentLang === 'th' ? 'ไม่สามารถลบพนักงานได้' : 'Could not remove staff member.', true);
+                }
+            }
         }
 
         function fetchAllStaff() {
-            // ... (code is the same, omitted for brevity)
+            staffLoading.classList.remove('hidden');
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                allStaff = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                staffLoading.classList.add('hidden');
+                renderStaffTable();
+                renderPendingOrders();
+            }, (error) => {
+                console.error("Error fetching staff:", error);
+                staffLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดพนักงานได้' : 'Could not load staff.'}</p>`;
+            });
         }
         
         function toggleStaffModal(show, staff = null) {
-            // ... (code is the same, omitted for brevity)
+            if (show) {
+                staffForm.reset();
+                if (staff) {
+                    document.getElementById('staff-modal-title').textContent = translations[currentLang].edit_staff_member;
+                    document.getElementById('staff-id').value = staff.id;
+                    document.getElementById('staff-uid').value = staff.id;
+                    document.getElementById('staff-uid').readOnly = true;
+                    document.getElementById('staff-name').value = staff.name || '';
+                    document.getElementById('staff-department-select').value = staff.departmentId || '';
+                } else {
+                    document.getElementById('staff-modal-title').textContent = translations[currentLang].add_staff_member;
+                    document.getElementById('staff-id').value = '';
+                    document.getElementById('staff-uid').readOnly = false;
+                }
+                staffModal.classList.remove('hidden');
+                staffModal.classList.add('flex');
+            } else {
+                staffModal.classList.add('hidden');
+                staffModal.classList.remove('flex');
+            }
         }
 
         async function handleSaveStaff(e) {
-            // ... (code is the same, omitted for brevity)
+            e.preventDefault();
+            const staffDocId = document.getElementById('staff-id').value;
+            const staffUid = document.getElementById('staff-uid').value;   
+            if (!staffUid) { showToast(currentLang === 'th' ? 'ต้องระบุ UID การยืนยันตัวตนผู้ใช้' : 'User Auth UID is required.', true); return; }
+            const staffData = { name: document.getElementById('staff-name').value, departmentId: document.getElementById('staff-department-select').value };
+            const docIdToUse = staffDocId || staffUid;
+            try {
+                await setDoc(doc(db, "users", docIdToUse), staffData);
+                showToast(staffDocId ? (currentLang === 'th' ? 'อัปเดตพนักงานแล้ว' : 'Staff member updated!') : (currentLang === 'th' ? 'เพิ่มพนักงานแล้ว' : 'Staff member added!'));
+                toggleStaffModal(false);
+            } catch (error) {
+                console.error("Error saving staff member:", error);
+                showToast(currentLang === 'th' ? 'ไม่สามารถบันทึกพนักงานได้' : 'Could not save staff member.', true);
+            }
         }
         
         function renderSuppliersTable() {
-            // ... (code is the same, omitted for brevity)
+            suppliersTableBody.innerHTML = '';
+            const totalPages = Math.ceil(allSuppliers.length / itemsPerPage);
+            const startIndex = (suppliersCurrentPage - 1) * itemsPerPage;
+            const paginatedSuppliers = allSuppliers.slice(startIndex, startIndex + itemsPerPage);
+
+            if(paginatedSuppliers.length === 0) {
+                 suppliersTableBody.innerHTML = `<tr><td colspan="2" class="text-center py-4">${currentLang === 'th' ? 'ไม่พบซัพพลายเออร์' : 'No suppliers found.'}</td></tr>`;
+            } else {
+                paginatedSuppliers.forEach(supplier => {
+                    const row = `
+                        <tr class="border-b">
+                            <td class="table-cell font-medium">${supplier.name}</td>
+                            <td class="table-cell">
+                                <button data-id="${supplier.id}" class="edit-supplier-btn text-blue-600 hover:underline"><span class="hidden sm:inline">${currentLang === 'th' ? 'แก้ไข' : 'Edit'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                <button data-id="${supplier.id}" class="delete-supplier-btn text-red-600 hover:underline ml-4"><span class="hidden sm:inline">${currentLang === 'th' ? 'ลบ' : 'Delete'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                            </td>
+                        </tr>
+                    `;
+                    suppliersTableBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+             renderPagination('suppliers', suppliersPaginationControls, totalPages, suppliersCurrentPage, (page) => {
+                suppliersCurrentPage = page;
+                renderSuppliersTable();
+            });
         }
 
+
         function fetchAllSuppliers() {
-            // ... (code is the same, omitted for brevity)
+            suppliersLoading.classList.remove('hidden');
+            onSnapshot(collection(db, "suppliers"), (snapshot) => {
+                allSuppliers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                allSuppliers.sort((a,b) => a.name.localeCompare(b.name));
+                suppliersLoading.classList.add('hidden');
+                
+                supplierFilter.innerHTML = `<option value="All">${translations[currentLang].all_suppliers}</option>`;
+                allSuppliers.forEach(s => supplierFilter.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+                
+                renderSuppliersTable();
+            }, (error) => {
+                console.error("Error fetching suppliers:", error);
+                suppliersLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดซัพพลายเออร์ได้' : 'Could not load suppliers.'}</p>`;
+            });
         }
 
         function toggleSupplierModal(show, supplier = null) {
-            // ... (code is the same, omitted for brevity)
+             if (show) {
+                supplierForm.reset();
+                if (supplier) {
+                    document.getElementById('supplier-modal-title').textContent = 'Edit Supplier';
+                    document.getElementById('supplier-id').value = supplier.id;
+                    document.getElementById('supplier-name').value = supplier.name;
+                } else {
+                    document.getElementById('supplier-modal-title').textContent = translations[currentLang].add_new_supplier;
+                    document.getElementById('supplier-id').value = '';
+                }
+                supplierModal.classList.remove('hidden');
+                supplierModal.classList.add('flex');
+            } else {
+                supplierModal.classList.add('hidden');
+                supplierModal.classList.remove('flex');
+            }
         }
         
         async function handleSaveSupplier(e) {
-            // ... (code is the same, omitted for brevity)
+            e.preventDefault();
+            const supplierId = document.getElementById('supplier-id').value;
+            const supplierData = { name: document.getElementById('supplier-name').value };
+            try {
+                if (supplierId) {
+                    await updateDoc(doc(db, "suppliers", supplierId), supplierData);
+                    showToast(currentLang === 'th' ? 'อัปเดตซัพพลายเออร์แล้ว' : 'Supplier updated!');
+                } else {
+                    await addDoc(collection(db, "suppliers"), supplierData);
+                    showToast(currentLang === 'th' ? 'เพิ่มซัพพลายเออร์แล้ว' : 'Supplier added!');
+                }
+                toggleSupplierModal(false);
+            } catch (error) {
+                console.error("Error saving supplier:", error);
+                showToast(currentLang === 'th' ? 'ไม่สามารถบันทึกซัพพลายเออร์ได้' : 'Could not save supplier.', true);
+            }
         }
-
+        
         async function handleDeleteSupplier(supplierId) {
-            // ... (code is the same, omitted for brevity)
+            if (confirm(currentLang === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบซัพพลายเออร์นี้?' : 'Are you sure you want to delete this supplier?')) {
+                try {
+                    await deleteDoc(doc(db, "suppliers", supplierId));
+                    showToast(currentLang === 'th' ? 'ลบซัพพลายเออร์แล้ว' : 'Supplier deleted.');
+                } catch (error) {
+                    console.error("Error deleting supplier:", error);
+                    showToast(currentLang === 'th' ? 'ไม่สามารถลบซัพพลายเออร์ได้' : 'Could not delete supplier.', true);
+                }
+            }
         }
-
 
         function renderDepartmentsTable() {
-            // ... (code is the same, omitted for brevity)
+            departmentsTableBody.innerHTML = '';
+            const totalPages = Math.ceil(allDepartments.length / itemsPerPage);
+            const startIndex = (deptsCurrentPage - 1) * itemsPerPage;
+            const paginatedDepts = allDepartments.slice(startIndex, startIndex + itemsPerPage);
+
+            if(paginatedDepts.length === 0) {
+                 departmentsTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${currentLang === 'th' ? 'ไม่พบแผนก' : 'No departments found.'}</td></tr>`;
+            } else {
+                paginatedDepts.forEach(dept => {
+                    const row = `
+                        <tr class="border-b">
+                            <td class="table-cell font-medium">${dept.name_en || ''}</td>
+                            <td class="table-cell text-gray-600">${dept.name_th || ''}</td>
+                            <td class="table-cell">
+                                <button data-id="${dept.id}" class="edit-department-btn text-blue-600 hover:underline"><span class="hidden sm:inline">${currentLang === 'th' ? 'แก้ไข' : 'Edit'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                <button data-id="${dept.id}" class="delete-department-btn text-red-600 hover:underline ml-4"><span class="hidden sm:inline">${currentLang === 'th' ? 'ลบ' : 'Delete'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                            </td>
+                        </tr>
+                    `;
+                    departmentsTableBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+             renderPagination('depts', departmentsPaginationControls, totalPages, deptsCurrentPage, (page) => {
+                deptsCurrentPage = page;
+                renderDepartmentsTable();
+            });
         }
         
         function fetchAllDepartments() {
-            // ... (code is the same, omitted for brevity)
+            departmentsLoading.classList.remove('hidden');
+            onSnapshot(collection(db, "departments"), (snapshot) => {
+                allDepartments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                 allDepartments.sort((a,b) => a.name_en.localeCompare(b.name_en));
+                departmentsLoading.classList.add('hidden');
+                staffDepartmentSelect.innerHTML = `<option value="">${currentLang === 'th' ? 'เลือกแผนก' : 'Select a department'}</option>`;
+                allDepartments.forEach(dept => {
+                    staffDepartmentSelect.innerHTML += `<option value="${dept.id}">${dept[`name_${currentLang}`]}</option>`;
+                });
+                renderDepartmentsTable();
+            }, (error) => {
+                console.error("Error fetching departments: ", error);
+                departmentsLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดแผนกได้' : 'Could not load departments.'}</p>`;
+            });
         }
 
         function toggleDepartmentModal(show, dept = null) {
-            // ... (code is the same, omitted for brevity)
+            if (show) {
+                departmentForm.reset();
+                if (dept) {
+                    document.getElementById('department-modal-title').textContent = translations[currentLang].edit_department;
+                    document.getElementById('department-id').value = dept.id;
+                    document.getElementById('department-name_en').value = dept.name_en || '';
+                    document.getElementById('department-name_th').value = dept.name_th || '';
+                } else {
+                    document.getElementById('department-modal-title').textContent = translations[currentLang].add_new_department;
+                    document.getElementById('department-id').value = '';
+                }
+                departmentModal.classList.remove('hidden');
+                departmentModal.classList.add('flex');
+            } else {
+                departmentModal.classList.add('hidden');
+                departmentModal.classList.remove('flex');
+            }
         }
 
         async function handleSaveDepartment(e) {
-            // ... (code is the same, omitted for brevity)
+            e.preventDefault();
+            const deptId = document.getElementById('department-id').value;
+            const deptData = {
+                name_en: document.getElementById('department-name_en').value,
+                name_th: document.getElementById('department-name_th').value
+            };
+            try {
+                if (deptId) {
+                    await updateDoc(doc(db, "departments", deptId), deptData);
+                    showToast(currentLang === 'th' ? 'อัปเดตแผนกแล้ว' : 'Department updated!');
+                } else {
+                    await addDoc(collection(db, "departments"), deptData);
+                    showToast(currentLang === 'th' ? 'เพิ่มแผนกแล้ว' : 'Department added!');
+                }
+                toggleDepartmentModal(false);
+            } catch (error) {
+                console.error("Error saving department:", error);
+                showToast(currentLang === 'th' ? 'ไม่สามารถบันทึกแผนกได้' : 'Could not save department.', true);
+            }
         }
 
         async function handleDeleteDepartment(deptId) {
-            // ... (code is the same, omitted for brevity)
+            const isAssigned = allStaff.some(staff => staff.departmentId === deptId);
+            if (isAssigned) {
+                alert(currentLang === 'th' ? 'ไม่สามารถลบแผนกนี้ได้ มีการกำหนดให้กับพนักงานหนึ่งคนหรือมากกว่า โปรดกำหนดใหม่ก่อน' : 'Cannot delete this department. It is currently assigned to one or more staff members. Please reassign them first.');
+                return;
+            }
+            if (confirm(currentLang === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบแผนกนี้?' : 'Are you sure you want to delete this department?')) {
+                try {
+                    await deleteDoc(doc(db, "departments", deptId));
+                    showToast(currentLang === 'th' ? 'ลบแผนกแล้ว' : 'Department deleted.');
+                } catch (error) {
+                    console.error("Error deleting department:", error);
+                    showToast(currentLang === 'th' ? 'ไม่สามารถลบแผนกได้' : 'Could not delete department.', true);
+                }
+            }
         }
         
         function initialize() {
