@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Orders - Da Moreno</title>
+    <title>Create Order - Da Moreno</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" href="https://fav.farm/🇮🇹" />
     <style>
         body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .modal-open { overflow: hidden; }
         #toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 50; }
         .toast { transform: translateX(120%); transition: transform 0.3s ease-in-out; }
         .toast.show { transform: translateX(0); }
         .lang-btn.active { background-color: #2563eb; color: white; }
         .lang-btn:not(.active) { background-color: #e5e7eb; color: #374151; }
         .nav-link.active { color: #2563eb; border-bottom-color: #2563eb; }
-        .details-list {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -41,12 +41,12 @@
                             <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
                             <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
                         </div>
-                        <div class="relative sm:hidden">
+                         <div class="relative sm:hidden">
                             <button id="menu-button" class="p-2 rounded-md hover:bg-gray-200">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                             </button>
                             <div id="mobile-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
-                                <a href="./index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="create_order">Create Order</a>
+                                <a href="./my-orders.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="my_orders">My Orders</a>
                                 <a href="./admin.html" id="admin-link-mobile" class="hidden block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="admin_dashboard">Admin</a>
                                 <button id="logout-btn-mobile" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="logout">Logout</button>
                             </div>
@@ -60,35 +60,72 @@
             </div>
             <nav class="mt-6 border-b hidden sm:block">
                 <div class="flex items-center gap-6 text-gray-500">
-                    <a href="./my-orders.html" class="nav-link active py-3 border-b-2 font-semibold" data-key="my_orders">My Orders</a>
-                    <a href="./index.html" class="nav-link py-3 border-b-2 border-transparent hover:text-blue-600" data-key="create_order">Create Order</a>
+                    <a href="./my-orders.html" class="nav-link py-3 border-b-2 border-transparent hover:text-blue-600" data-key="my_orders">My Orders</a>
+                    <a href="./index.html" class="nav-link active py-3 border-b-2 font-semibold" data-key="create_order">Create Order</a>
                 </div>
             </nav>
         </header>
 
-        <main>
-            <div class="mb-6 flex items-center gap-2">
-                <label for="status-filter" class="font-medium" data-key="filter_by_status">Filter by status:</label>
-                <select id="status-filter" class="p-2 border rounded-lg">
-                    <option value="All" data-key="all">All</option>
-                    <option value="Pending" data-key="pending">Pending</option>
-                    <option value="Processed" data-key="processed">Processed</option>
-                    <option value="Cancelled" data-key="cancelled">Cancelled</option>
-                </select>
+        <div id="team-orders-dashboard" class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4" data-key="team_pending_orders">Team's Pending Orders</h2>
+            <div id="team-pending-orders-list" class="space-y-4"></div>
+            <div id="team-orders-loading" class="text-center py-6">
+                <svg class="animate-spin h-6 w-6 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <p class="mt-2 text-gray-500" data-key="loading_team_orders">Loading team orders...</p>
             </div>
-            <div id="my-orders-list" class="space-y-4"></div>
-            <div id="orders-loading" class="text-center py-10">
-                <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <p class="mt-2 text-gray-500" data-key="loading_my_orders">Loading my orders...</p>
+        </div>
+
+        <div class="mb-8 p-4 bg-white rounded-lg shadow-sm">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4" data-key="product_catalog">Product Catalog</h2>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <div class="relative flex-grow">
+                    <input type="text" id="searchInput" class="w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" data-key-placeholder="search_placeholder">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <button id="clearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8-0 100-16 8 8-0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+                <div id="category-filters" class="flex items-center gap-2 overflow-x-auto pb-2"></div>
             </div>
-             <div id="pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
-        </main>
+        </div>
+
+        <main id="product-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></main>
+        
+        <div id="loading" class="text-center py-10">
+             <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <p class="mt-2 text-gray-500" data-key="loading_products">Loading products...</p>
+        </div>
+
+        <button id="cart-button" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-110 z-20">
+            <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+            <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">0</span>
+        </button>
+
+        <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
+            <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b">
+                    <h2 id="cart-modal-title" class="text-2xl font-bold text-gray-800" data-key="current_order">Current Order</h2>
+                    <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+                </div>
+                <div id="cart-items-container" class="p-6 overflow-y-auto"></div>
+                <div class="p-6 border-t mt-auto">
+                    <textarea id="order-notes" class="w-full p-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" data-key-placeholder="notes_placeholder"></textarea>
+                    <div class="flex justify-end gap-4">
+                        <button id="close-modal-btn-footer" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300" data-key="close">Close</button>
+                        <button id="place-order-btn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+                            <span id="place-order-text" data-key="place_order">Place Order</span>
+                            <svg id="order-spinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-     <script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, serverTimestamp, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDIqmK_P2JWz3Vr5-u_2b6s6hhyWO9c-sg",
@@ -106,38 +143,56 @@
 
         const appContainer = document.getElementById('app');
         const userDisplay = document.getElementById('user-display');
+        const productGrid = document.getElementById('product-grid');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearch = document.getElementById('clearSearch');
+        const categoryFiltersContainer = document.getElementById('category-filters');
+        const loadingIndicator = document.getElementById('loading');
+        const cartButton = document.getElementById('cart-button');
+        const cartCount = document.getElementById('cart-count');
+        const cartModal = document.getElementById('cart-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const closeModalBtnFooter = document.getElementById('close-modal-btn-footer');
+        const cartItemsContainer = document.getElementById('cart-items-container');
+        const placeOrderBtn = document.getElementById('place-order-btn');
+        const orderNotes = document.getElementById('order-notes');
         const logoutBtn = document.getElementById('logout-btn');
         const logoutBtnMobile = document.getElementById('logout-btn-mobile');
+        const toastContainer = document.getElementById('toast-container');
         const adminLink = document.getElementById('admin-link');
         const adminLinkMobile = document.getElementById('admin-link-mobile');
-        const myOrdersList = document.getElementById('my-orders-list');
-        const ordersLoading = document.getElementById('orders-loading');
-        const paginationControls = document.getElementById('pagination-controls');
-        const statusFilter = document.getElementById('status-filter');
+        const teamPendingOrdersList = document.getElementById('team-pending-orders-list');
+        const teamOrdersLoading = document.getElementById('team-orders-loading');
+        const placeOrderText = document.getElementById('place-order-text');
+        const orderSpinner = document.getElementById('order-spinner');
         const langSwitcher = document.getElementById('lang-switcher');
         const menuButton = document.getElementById('menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
-        let currentUser;
-        let allMyOrders = [];
-        let currentPage = 1;
-        const ordersPerPage = 10;
+
+        let allProducts = [], allDepartments = [], allStaff = [];
+        let teamPendingOrders = [];
+        let currentFilter = 'All';
+        let cart = [];
+        let currentUser, userDepartment;
         let currentLang = localStorage.getItem('appLanguage') || 'en';
 
         const translations = {
-             en: {
+            en: {
                 main_title: "Da Moreno At Town",
                 main_subtitle: "Supply Order System",
                 admin_dashboard: "Admin",
                 logout: "Logout",
                 my_orders: "My Orders",
                 create_order: "Create Order",
-                filter_by_status: "Filter by status:",
-                all: "All",
-                pending: "Pending",
-                processed: "Processed",
-                cancelled: "Cancelled",
-                loading_my_orders: "Loading my orders...",
-                reorder: "Reorder",
+                team_pending_orders: "Team's Pending Orders",
+                loading_team_orders: "Loading team orders...",
+                product_catalog: "Product Catalog",
+                search_placeholder: "Search for a product...",
+                loading_products: "Loading products...",
+                current_order: "Current Order",
+                notes_placeholder: "Add any special notes for this order...",
+                close: "Close",
+                place_order: "Place Order",
                 logged_in_as: "Logged in as:"
             },
             th: {
@@ -147,13 +202,15 @@
                 logout: "ออกจากระบบ",
                 my_orders: "คำสั่งซื้อของฉัน",
                 create_order: "สร้างคำสั่งซื้อ",
-                filter_by_status: "กรองตามสถานะ:",
-                all: "ทั้งหมด",
-                pending: "รอดำเนินการ",
-                processed: "ดำเนินการแล้ว",
-                cancelled: "ยกเลิกแล้ว",
-                loading_my_orders: "กำลังโหลดคำสั่งซื้อของฉัน...",
-                reorder: "สั่งอีกครั้ง",
+                team_pending_orders: "คำสั่งซื้อที่รอดำเนินการของทีม",
+                loading_team_orders: "กำลังโหลดคำสั่งซื้อของทีม...",
+                product_catalog: "แคตตาล็อกสินค้า",
+                search_placeholder: "ค้นหาสินค้า...",
+                loading_products: "กำลังโหลดสินค้า...",
+                current_order: "คำสั่งซื้อปัจจุบัน",
+                notes_placeholder: "เพิ่มหมายเหตุพิเศษสำหรับคำสั่งซื้อนี้...",
+                close: "ปิด",
+                place_order: "สั่งซื้อ",
                 logged_in_as: "เข้าสู่ระบบในชื่อ:"
             }
         };
@@ -167,6 +224,12 @@
                     el.textContent = translations[lang][key];
                 }
             });
+             document.querySelectorAll('[data-key-placeholder]').forEach(el => {
+                const key = el.dataset.keyPlaceholder;
+                if (translations[lang][key]) {
+                    el.placeholder = translations[lang][key];
+                }
+            });
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 if (btn.dataset.lang === lang) {
                     btn.classList.add('active');
@@ -174,105 +237,231 @@
                     btn.classList.remove('active');
                 }
             });
-            renderMyOrders();
+            renderProducts();
+            renderCategoryFilters();
+            renderTeamPendingOrders();
         }
 
-        function renderPaginationControls(totalOrders) {
-            paginationControls.innerHTML = '';
-            const totalPages = Math.ceil(totalOrders / ordersPerPage);
-            if (totalPages <= 1) return;
-
-            const prevButton = `<button id="prev-page" ${currentPage === 1 ? 'disabled' : ''} class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">&lt;</button>`;
-            const pageInfo = `<span>Page ${currentPage} of ${totalPages}</span>`;
-            const nextButton = `<button id="next-page" ${currentPage === totalPages ? 'disabled' : ''} class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">&gt;</button>`;
-            paginationControls.innerHTML = prevButton + pageInfo + nextButton;
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.className = `toast text-white py-3 px-6 rounded-lg shadow-lg mb-2 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3000);
         }
 
-        function renderMyOrders() {
-            myOrdersList.innerHTML = '';
-            const status = statusFilter.value;
-            const filteredOrders = status === 'All' ? allMyOrders : allMyOrders.filter(o => o.status === status);
+        // --- Cart Persistence Functions ---
+        function saveCart() {
+            if (currentUser) {
+                sessionStorage.setItem(`cart_${currentUser.uid}`, JSON.stringify(cart));
+            }
+        }
 
-            if (filteredOrders.length === 0) {
-                myOrdersList.innerHTML = `<div class="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">${currentLang === 'th' ? 'ไม่พบคำสั่งซื้อ' : 'No orders found.'}</div>`;
-                renderPaginationControls(0);
+        function loadCart() {
+            if (!currentUser) return;
+            
+            const reorderData = localStorage.getItem('reorderCart');
+            if (reorderData) {
+                cart = JSON.parse(reorderData);
+                localStorage.removeItem('reorderCart');
+                saveCart();
+                toggleModal(true); 
+            } else {
+                const savedCart = sessionStorage.getItem(`cart_${currentUser.uid}`);
+                cart = savedCart ? JSON.parse(savedCart) : [];
+            }
+        }
+        // --- End Cart Persistence ---
+        
+        function addToCart(productId) {
+            const product = allProducts.find(p => p.id === productId);
+            if (!product) return;
+            const cartItem = cart.find(item => item.productId === productId);
+            if (cartItem) { cartItem.quantity++; } else { cart.push({ productId: product.id, productName: product.name_en, productName_th: product.name_th, packaging: product.packaging_en, packaging_th: product.packaging_th, quantity: 1, supplier: product.supplier, productRef: product.product_reference }); }
+            showToast(`${product[`name_${currentLang}`]} added to order.`);
+            updateCart();
+        }
+
+        function updateCart() {
+            cartCount.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+            cartItemsContainer.innerHTML = '';
+            
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = `<p class="text-gray-500 text-center">${currentLang === 'th' ? 'คำสั่งซื้อของคุณว่างเปล่า' : 'Your order is empty.'}</p>`;
+                placeOrderBtn.disabled = true;
+                placeOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                placeOrderBtn.disabled = false; 
+                placeOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                cart.forEach(item => {
+                    const itemHtml = `<div class="flex items-center justify-between py-3 border-b last:border-b-0"><div><p class="font-semibold">${item[`productName_${currentLang}`] || item.productName}</p><p class="text-sm text-gray-500">${currentLang === 'th' ? 'ต่อ' : 'Per'} ${item[`packaging_${currentLang}`] || item.packaging}</p></div><div class="flex items-center gap-3"><button data-id="${item.productId}" class="quantity-btn decrease-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">-</button><span class="font-medium w-8 text-center">${item.quantity}</span><button data-id="${item.productId}" class="quantity-btn increase-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">+</button><button data-id="${item.productId}" class="remove-item text-red-500 hover:text-red-700 ml-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div></div>`;
+                    cartItemsContainer.insertAdjacentHTML('beforeend', itemHtml);
+                });
+            }
+            saveCart();
+        }
+
+        function toggleModal(show) {
+            if (show) { 
+                cartModal.classList.remove('hidden'); 
+                cartModal.classList.add('flex'); 
+                document.body.classList.add('modal-open'); 
+            } else { 
+                cartModal.classList.add('hidden'); 
+                cartModal.classList.remove('flex'); 
+                document.body.classList.remove('modal-open');
+            }
+        }
+
+        function resetCartState() {
+            cart = [];
+            orderNotes.value = '';
+            updateCart();
+        }
+
+        function renderProducts() {
+            productGrid.innerHTML = '';
+            const searchTerm = searchInput.value.toLowerCase();
+            const filteredProducts = allProducts.filter(product => {
+                const nameEn = product.name_en || '';
+                const nameTh = product.name_th || '';
+                const ref = product.product_reference || '';
+                const keywords = product.keywords || '';
+                return (currentFilter === (currentLang === 'th' ? 'ทั้งหมด' : 'All') || product[`category_${currentLang}`] === currentFilter) && 
+                       (nameEn.toLowerCase().includes(searchTerm) || 
+                        nameTh.toLowerCase().includes(searchTerm) || 
+                        ref.toLowerCase().includes(searchTerm) ||
+                        keywords.toLowerCase().includes(searchTerm));
+            });
+            if (filteredProducts.length === 0 && allProducts.length > 0) { productGrid.innerHTML = `<p class="text-gray-500 col-span-full text-center">${currentLang === 'th' ? 'ไม่พบสินค้า' : 'No products found.'}</p>`; return; }
+            filteredProducts.forEach(product => {
+                const card = `<div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform transform hover:-translate-y-1 flex flex-col"><img src="${product.imageUrl || 'https://placehold.co/400x400/e2e8f0/64748b?text=No+Img'}" alt="${product.name_en}" class="w-full h-40 object-cover"><div class="p-4 flex flex-col flex-grow"><h3 class="font-semibold text-lg truncate">${product[`name_${currentLang}`]}</h3><p class="text-gray-500 text-sm">Ref: ${product.product_reference || 'N/A'}</p><div class="flex items-center justify-between mt-4 pt-2 border-t mt-auto"><span class="text-gray-600 font-medium">${currentLang === 'th' ? 'ต่อ' : 'Per'} ${product[`packaging_${currentLang}`]}</span><button data-id="${product.id}" class="add-to-cart-btn bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">${currentLang === 'th' ? 'เพิ่ม' : 'Add'}</button></div></div></div>`;
+                productGrid.insertAdjacentHTML('beforeend', card);
+            });
+        }
+
+        function renderCategoryFilters() {
+            const allKey = currentLang === 'th' ? 'ทั้งหมด' : 'All';
+            const categories = [allKey, ...new Set(allProducts.map(p => p[`category_${currentLang}`]).filter(Boolean).sort())];
+            categoryFiltersContainer.innerHTML = '';
+            categories.forEach(category => {
+                const isActive = category === currentFilter;
+                const buttonClass = isActive ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300';
+                const button = `<button data-category="${category}" class="category-filter-btn whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${buttonClass}">${category}</button>`;
+                categoryFiltersContainer.insertAdjacentHTML('beforeend', button);
+            });
+        }
+
+        function fetchProducts() {
+            loadingIndicator.classList.remove('hidden');
+            const productsCol = collection(db, "products");
+            onSnapshot(productsCol, (snapshot) => {
+                allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(product => product.isActive !== false);
+                loadingIndicator.classList.add('hidden');
+                renderCategoryFilters();
+                renderProducts();
+            }, (error) => {
+                console.error("Error fetching products: ", error);
+                loadingIndicator.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดสินค้าได้' : 'Could not load products.'}</p>`;
+            });
+        }
+        
+        async function handlePlaceOrder() {
+            if (!userDepartment) { showToast(currentLang === 'th' ? 'ไม่ได้กำหนดแผนก' : 'Department not assigned.', true); return; }
+            if (cart.length === 0) { showToast(currentLang === 'th' ? 'คำสั่งซื้อของคุณว่างเปล่า' : 'Your order is empty.', true); return; }
+
+            placeOrderBtn.disabled = true; 
+            placeOrderText.classList.add('hidden'); 
+            orderSpinner.classList.remove('hidden');
+
+            try {
+                const orderData = { departmentId: userDepartment.id, departmentName: userDepartment.name_en, departmentName_th: userDepartment.name_th, status: "Pending", notes: orderNotes.value.trim(), items: cart, userId: currentUser.uid, createdAt: serverTimestamp() };
+                await addDoc(collection(db, "orders"), orderData);
+                showToast(currentLang === 'th' ? 'สั่งซื้อสำเร็จ' : 'Order placed successfully!');
+                toggleModal(false);
+                resetCartState();
+            } catch (error) { 
+                console.error("Error saving order: ", error); 
+                showToast(currentLang === 'th' ? 'ไม่สามารถบันทึกคำสั่งซื้อได้' : 'Failed to save order.', true);
+            } finally { 
+                placeOrderBtn.disabled = false; 
+                placeOrderText.classList.remove('hidden'); 
+                orderSpinner.classList.add('hidden'); 
+            }
+        }
+
+        function renderTeamPendingOrders() {
+            teamPendingOrdersList.innerHTML = '';
+            if (teamPendingOrders.length === 0) {
+                teamPendingOrdersList.innerHTML = `<div class="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">${currentLang === 'th' ? 'ไม่มีคำสั่งซื้อที่รอดำเนินการในทีมของคุณ' : 'No pending orders in your team.'}</div>`;
                 return;
             }
-
-            const startIndex = (currentPage - 1) * ordersPerPage;
-            const endIndex = startIndex + ordersPerPage;
-            const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
-
-            paginatedOrders.forEach(order => {
+            teamPendingOrders.forEach(order => {
+                const user = allStaff.find(u => u.id === order.userId);
+                const userName = user ? user.name : 'Unknown';
                 const itemsHtml = order.items.map(item => `<li class="text-gray-600">${item.quantity} x ${item[`productName_${currentLang}`] || item.productName}</li>`).join('');
-                const orderDate = order.createdAt?.toDate().toLocaleDateString() || 'N/A';
-                const statusText = order.status || 'Pending';
-                let statusClass = 'text-yellow-600 bg-yellow-100';
-                if(statusText === 'Cancelled') statusClass = 'text-red-600 bg-red-100';
-                if(statusText === 'Processed') statusClass = 'text-green-600 bg-green-100';
-
                 const orderHtml = `
-                    <div class="bg-white rounded-lg shadow-sm">
-                        <div class="p-4 cursor-pointer order-header flex justify-between items-center">
-                            <div>
-                                <p class="font-bold">${currentLang === 'th' ? 'คำสั่งซื้อจาก' : 'Order from'} ${orderDate} <span class="text-sm font-medium px-2 py-1 rounded-full ${statusClass}">${statusText}</span></p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                               <button data-id="${order.id}" class="reorder-btn text-sm bg-green-100 text-green-700 px-3 py-1 rounded hover:bg-green-200">${translations[currentLang].reorder}</button>
-                               <svg class="w-5 h-5 chevron-icon transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                            </div>
-                        </div>
-                        <div class="details-list px-4 pb-4">
-                             <ul class="list-disc list-inside mt-2">${itemsHtml}</ul>
-                        </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <p class="font-bold">${userName}</p>
+                        <ul class="list-disc list-inside mt-2">${itemsHtml}</ul>
                     </div>
                 `;
-                myOrdersList.insertAdjacentHTML('beforeend', orderHtml);
+                teamPendingOrdersList.insertAdjacentHTML('beforeend', orderHtml);
             });
-            renderPaginationControls(filteredOrders.length);
         }
 
-        function fetchMyOrders() {
-            if (!currentUser) return;
-            ordersLoading.classList.remove('hidden');
-            const q = query(collection(db, "orders"), where("userId", "==", currentUser.uid));
+        function fetchTeamPendingOrders() {
+            if (!userDepartment) return;
+            teamOrdersLoading.classList.remove('hidden');
+            const q = query(collection(db, "orders"), where("departmentId", "==", userDepartment.id), where("status", "==", "Pending"));
             onSnapshot(q, (snapshot) => {
-                allMyOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                allMyOrders.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-                ordersLoading.classList.add('hidden');
-                renderMyOrders();
+                teamPendingOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                teamOrdersLoading.classList.add('hidden');
+                renderTeamPendingOrders();
             }, (error) => {
-                console.error("Error fetching my orders:", error);
-                ordersLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดคำสั่งซื้อของคุณได้' : 'Could not load your orders.'}</p>`;
+                console.error("Error fetching team orders:", error);
+                teamOrdersLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดคำสั่งซื้อของทีมได้' : 'Could not load team orders.'}</p>`;
             });
         }
-
-        function handleReorder(orderId) {
-            const order = allMyOrders.find(o => o.id === orderId);
-            if(order && order.items) {
-                localStorage.setItem('reorderCart', JSON.stringify(order.items));
-                window.location.href = './index.html';
-            }
+        
+        function fetchAllStaff() {
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                allStaff = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderTeamPendingOrders();
+            });
         }
-
+        
         async function initializeAppForUser(user) {
             currentUser = user;
+            loadCart(); // Load cart from session or handle reorder
+
             const userDocRef = doc(db, "users", user.uid);
             try {
                 const userDoc = await getDoc(userDocRef);
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
                     if(userDisplay && userData.name) {
-                        userDisplay.textContent = `${translations[currentLang].logged_in_as} ${userData.name}`;
+                         userDisplay.textContent = `${translations[currentLang].logged_in_as} ${userData.name}`;
                     }
                     if (userData.departmentId === 'qu76BRyA9CS1XTqSay4X') {
                         adminLink.classList.remove('hidden');
                         adminLinkMobile.classList.remove('hidden');
                     }
-                }
-            } catch (error) { console.error("Error fetching user data:", error); }
+                    if (userData.departmentId) {
+                        const departmentDocRef = doc(db, "departments", userData.departmentId);
+                        const departmentDoc = await getDoc(departmentDocRef);
+                        if (departmentDoc.exists()) {
+                            userDepartment = { id: departmentDoc.id, ...departmentDoc.data() };
+                            fetchAllStaff();
+                            fetchTeamPendingOrders();
+                        } else { showToast("Assigned department not found.", true); }
+                    } else { showToast("User has no assigned department.", true); }
+                } else { showToast("User profile not found in database.", true); }
+            } catch (error) { console.error("Error fetching user data:", error); showToast("Could not fetch user data.", true); }
             appContainer.classList.remove('hidden');
-            fetchMyOrders();
+            fetchProducts();
+            updateCart();
         }
         
         onAuthStateChanged(auth, (user) => {
@@ -288,50 +477,6 @@
             const lang = e.target.dataset.lang;
             if (lang) { setLanguage(lang); }
         });
-        
-        statusFilter.addEventListener('change', () => {
-            currentPage = 1;
-            renderMyOrders();
-        });
-
-        paginationControls.addEventListener('click', (e) => {
-            const status = statusFilter.value;
-            const filteredOrders = status === 'All' ? allMyOrders : allMyOrders.filter(o => o.status === status);
-            const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-            if (e.target.id === 'prev-page') {
-                if(currentPage > 1) {
-                    currentPage--;
-                    renderMyOrders();
-                }
-            } else if (e.target.id === 'next-page') {
-                if(currentPage < totalPages) {
-                    currentPage++;
-                    renderMyOrders();
-                }
-            }
-        });
-
-        myOrdersList.addEventListener('click', (e) => {
-            const reorderBtn = e.target.closest('.reorder-btn');
-            if(reorderBtn) {
-                e.stopPropagation();
-                handleReorder(reorderBtn.dataset.id);
-                return;
-            }
-
-            const header = e.target.closest('.order-header');
-            if(header) {
-                const details = header.nextElementSibling;
-                const icon = header.querySelector('.chevron-icon');
-                if(details.style.maxHeight) {
-                    details.style.maxHeight = null;
-                    icon.style.transform = 'rotate(0deg)';
-                } else {
-                    details.style.maxHeight = details.scrollHeight + "px";
-                    icon.style.transform = 'rotate(180deg)';
-                }
-            }
-        });
 
         menuButton.addEventListener('click', () => {
             mobileMenu.classList.toggle('hidden');
@@ -343,13 +488,72 @@
             }
         });
 
+        function handleSearchInput(inputElement, clearButton) {
+             if (inputElement.value) {
+                clearButton.classList.remove('hidden');
+            } else {
+                clearButton.classList.add('hidden');
+            }
+            renderProducts();
+        }
+        searchInput.addEventListener('input', () => handleSearchInput(searchInput, clearSearch));
+        clearSearch.addEventListener('click', () => {
+            searchInput.value = '';
+            handleSearchInput(searchInput, clearSearch);
+        });
+
+        categoryFiltersContainer.addEventListener('click', (e) => { 
+            const btn = e.target.closest('.category-filter-btn');
+            if (btn) { 
+                currentFilter = btn.dataset.category; 
+                renderCategoryFilters(); 
+                renderProducts(); 
+            } 
+        });
+        productGrid.addEventListener('click', (e) => { if (e.target.closest('.add-to-cart-btn')) { addToCart(e.target.closest('.add-to-cart-btn').dataset.id); } });
+        
+        cartItemsContainer.addEventListener('click', (e) => {
+            const button = e.target.closest('.quantity-btn, .remove-item');
+            if (!button) return;
+            const productId = button.dataset.id;
+            const itemInCart = cart.find(item => item.productId === productId);
+            if (button.classList.contains('increase-quantity')) { itemInCart.quantity++; } 
+            else if (button.classList.contains('decrease-quantity')) { if (itemInCart.quantity > 1) { itemInCart.quantity--; } else { cart = cart.filter(item => item.productId !== productId); } } 
+            else if (button.classList.contains('remove-item')) { cart = cart.filter(item => item.productId !== productId); }
+            updateCart();
+        });
+
+        placeOrderBtn.addEventListener('click', handlePlaceOrder);
+        
+        cartButton.addEventListener('click', () => {
+            updateCart();
+            toggleModal(true);
+        });
+
+        // --- FIX: Removed resetCartState() from modal close events ---
+        closeModalBtn.addEventListener('click', () => {
+            toggleModal(false);
+        });
+        closeModalBtnFooter.addEventListener('click', () => {
+             toggleModal(false);
+        });
+        cartModal.addEventListener('click', (e) => { 
+            if (e.target === cartModal) {
+                toggleModal(false);
+            }
+        });
+        
         const logout = () => {
             signOut(auth);
             localStorage.removeItem('appLanguage');
+            // Also clear session storage for the user on logout
+            if(currentUser) {
+                sessionStorage.removeItem(`cart_${currentUser.uid}`);
+            }
         }
         logoutBtn.addEventListener('click', logout);
         logoutBtnMobile.addEventListener('click', logout);
+
     </script>
 </body>
 </html>
-
