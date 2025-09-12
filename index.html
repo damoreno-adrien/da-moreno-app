@@ -82,7 +82,7 @@
                     <input type="text" id="searchInput" class="w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" data-key-placeholder="search_placeholder">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     <button id="clearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 hidden">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8-0 100-16 8 8-0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
                     </button>
                 </div>
                 <div id="category-filters" class="flex items-center gap-2 overflow-x-auto pb-2"></div>
@@ -250,6 +250,29 @@
             setTimeout(() => toast.classList.add('show'), 10);
             setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3000);
         }
+
+        // --- Cart Persistence Functions ---
+        function saveCart() {
+            if (currentUser) {
+                sessionStorage.setItem(`cart_${currentUser.uid}`, JSON.stringify(cart));
+            }
+        }
+
+        function loadCart() {
+            if (!currentUser) return;
+            
+            const reorderData = localStorage.getItem('reorderCart');
+            if (reorderData) {
+                cart = JSON.parse(reorderData);
+                localStorage.removeItem('reorderCart');
+                saveCart();
+                toggleModal(true); 
+            } else {
+                const savedCart = sessionStorage.getItem(`cart_${currentUser.uid}`);
+                cart = savedCart ? JSON.parse(savedCart) : [];
+            }
+        }
+        // --- End Cart Persistence ---
         
         function addToCart(productId) {
             const product = allProducts.find(p => p.id === productId);
@@ -261,7 +284,7 @@
         }
 
         function updateCart() {
-            cartCount.textContent = cart.length;
+            cartCount.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
             cartItemsContainer.innerHTML = '';
             
             if (cart.length === 0) {
@@ -276,6 +299,7 @@
                     cartItemsContainer.insertAdjacentHTML('beforeend', itemHtml);
                 });
             }
+            saveCart();
         }
 
         function toggleModal(show) {
@@ -410,6 +434,8 @@
         
         async function initializeAppForUser(user) {
             currentUser = user;
+            loadCart(); // Load cart from session or handle reorder
+
             const userDocRef = doc(db, "users", user.uid);
             try {
                 const userDoc = await getDoc(userDocRef);
@@ -485,6 +511,7 @@
             } 
         });
         productGrid.addEventListener('click', (e) => { if (e.target.closest('.add-to-cart-btn')) { addToCart(e.target.closest('.add-to-cart-btn').dataset.id); } });
+        
         cartItemsContainer.addEventListener('click', (e) => {
             const button = e.target.closest('.quantity-btn, .remove-item');
             if (!button) return;
@@ -495,41 +522,38 @@
             else if (button.classList.contains('remove-item')) { cart = cart.filter(item => item.productId !== productId); }
             updateCart();
         });
+
         placeOrderBtn.addEventListener('click', handlePlaceOrder);
+        
         cartButton.addEventListener('click', () => {
             updateCart();
             toggleModal(true);
         });
+
+        // --- FIX: Removed resetCartState() from modal close events ---
         closeModalBtn.addEventListener('click', () => {
             toggleModal(false);
-            resetCartState();
         });
         closeModalBtnFooter.addEventListener('click', () => {
              toggleModal(false);
-             resetCartState();
         });
         cartModal.addEventListener('click', (e) => { 
             if (e.target === cartModal) {
                 toggleModal(false);
-                resetCartState();
             }
         });
         
         const logout = () => {
             signOut(auth);
             localStorage.removeItem('appLanguage');
+            // Also clear session storage for the user on logout
+            if(currentUser) {
+                sessionStorage.removeItem(`cart_${currentUser.uid}`);
+            }
         }
         logoutBtn.addEventListener('click', logout);
         logoutBtnMobile.addEventListener('click', logout);
 
-        const reorderData = localStorage.getItem('reorderCart');
-        if (reorderData) {
-            cart = JSON.parse(reorderData);
-            localStorage.removeItem('reorderCart');
-            updateCart();
-            toggleModal(true);
-        }
     </script>
 </body>
 </html>
-
