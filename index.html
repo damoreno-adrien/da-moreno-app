@@ -9,7 +9,8 @@
     <link rel="icon" href="https://fav.farm/🇮🇹" />
     <style>
         body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { display: none; }
+        ::-webkit-scrollbar { display: none; } /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } /* Hide scrollbar for IE, Edge and Firefox */
         .modal-open { overflow: hidden; }
         #toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 50; }
         .toast { transform: translateX(120%); transition: transform 0.3s ease-in-out; }
@@ -26,7 +27,7 @@
 
     <div id="app" class="max-w-7xl mx-auto sm:p-6 lg:p-8 pb-24 hidden">
         
-        <header class="mb-4 sm:mb-8 p-4 sm:p-0">
+        <header class="mb-4 sm:mb-8 p-4 sm:p-0 bg-white sm:bg-transparent">
             <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
                 <div>
                     <h1 class="text-3xl sm:text-4xl font-bold text-gray-800" data-key="main_title">Da Moreno At Town</h1>
@@ -34,7 +35,7 @@
                 </div>
                 <div class="w-full sm:w-auto flex flex-col sm:flex-row items-end sm:items-center gap-4">
                     <p id="user-display" class="text-sm text-gray-600 w-full sm:w-auto text-right sm:text-left"></p>
-                    <div class="w-full sm:w-auto flex items-center justify-between gap-2">
+                    <div class="w-full sm:w-auto justify-between flex items-center gap-2">
                         <div id="lang-switcher" class="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-lg p-1">
                             <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
                             <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
@@ -64,6 +65,15 @@
             </nav>
         </header>
 
+        <div id="team-orders-dashboard" class="mb-8 p-4 sm:p-0">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4" data-key="team_pending_orders">Team's Pending Orders</h2>
+            <div id="team-pending-orders-list" class="space-y-4"></div>
+            <div id="team-orders-loading" class="text-center py-6">
+                <svg class="animate-spin h-6 w-6 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <p class="mt-2 text-gray-500" data-key="loading_team_orders">Loading team orders...</p>
+            </div>
+        </div>
+
         <main class="flex flex-col sm:flex-row sm:gap-8">
             <!-- Desktop: Full search bar -->
              <div class="mb-4 p-4 bg-white rounded-lg shadow-sm hidden sm:block">
@@ -88,9 +98,9 @@
                 </div>
             </div>
 
-            <div class="sm:hidden h-screen flex pt-20">
-                <aside id="category-filters-mobile" class="w-1/4 overflow-y-auto bg-gray-50 p-2 space-y-1"></aside>
-                <div id="product-grid-mobile" class="w-3/4 grid grid-cols-2 gap-4 overflow-y-auto p-2"></div>
+            <div class="sm:hidden h-[calc(100vh-160px)] flex pt-20">
+                <aside id="category-filters-mobile" class="w-1/4 overflow-y-auto bg-gray-50 p-2 space-y-1 no-scrollbar"></aside>
+                <div id="product-grid-mobile" class="w-3/4 grid grid-cols-2 gap-4 overflow-y-auto p-2 no-scrollbar"></div>
             </div>
 
             <!-- Desktop Layout -->
