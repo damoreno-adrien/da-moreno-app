@@ -19,768 +19,1650 @@
         .toast.show { transform: translateX(0); }
         .lang-btn.active { background-color: #2563eb; color: white; }
         .lang-btn:not(.active) { background-color: #e5e7eb; color: #374151; }
-        .tab-btn.active { border-color: #2563eb; color: #2563eb; }
+        .details-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .sortable:hover { background-color: #e5e7eb; cursor: pointer; }
+        .sortable .sort-icon { opacity: 0; transition: opacity 0.2s; }
+        .sortable:hover .sort-icon { opacity: 0.5; }
+        .sortable.asc .sort-icon, .sortable.desc .sort-icon { opacity: 1; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-100">
 
-    <div id="app-loading" class="fixed inset-0 bg-white flex items-center justify-center z-50">
-        <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+    <div id="access-denied" class="hidden text-center p-8">
+        <h1 class="text-2xl font-bold text-red-600">Access Denied</h1>
+        <p class="text-gray-700">You do not have permission to view this page. Redirecting...</p>
     </div>
-
-    <div id="app-content" class="hidden">
-        <nav class="bg-white shadow-md">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center">
-                        <span class="font-bold text-xl text-blue-600">Da Moreno Admin</span>
-                    </div>
-                    <div class="flex items-center">
-                        <span id="user-name" class="mr-4 font-medium hidden sm:block"></span>
-                        <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Logout</button>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <div class="px-4 py-6 sm:px-0">
-                <div class="border-b border-gray-200 mb-4">
-                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                        <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="products">Products</button>
-                        <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="suppliers">Suppliers</button>
-                        <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="departments">Departments</button>
-                        <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="staff">Staff</button>
-                    </nav>
-                </div>
-
-                <div id="products-tab" class="tab-content">
-                    <div class="sm:flex sm:items-center sm:justify-between mb-4">
-                        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">Products</h2>
-                        <div class="mt-4 sm:mt-0 sm:ml-4 flex gap-2">
-                             <button id="import-products-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Import CSV</button>
-                             <button id="export-products-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Export CSV</button>
-                             <button id="add-product-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Add Product</button>
-                             <input type="file" id="product-csv-input" class="hidden" accept=".csv">
-                        </div>
-                    </div>
-                    <input id="product-search" type="text" placeholder="Search products..." class="w-full p-2 border border-gray-300 rounded-lg mb-4">
-                    <div class="overflow-x-auto bg-white rounded-lg shadow">
-                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50"><tr>
-                                <th class="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name (EN)</th>
-                                <th class="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name (TH)</th>
-                                <th class="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                <th class="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
-                                <th class="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="table-cell text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr></thead>
-                            <tbody id="products-table-body" class="bg-white divide-y divide-gray-200"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="suppliers-tab" class="tab-content hidden">
-                    <div class="sm:flex sm:items-center sm:justify-between mb-4">
-                         <h2 class="text-2xl font-bold">Suppliers</h2>
-                         <div class="mt-4 sm:mt-0 sm:ml-4 flex gap-2">
-                             <button id="import-supplier-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Import CSV</button>
-                             <button id="export-supplier-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Export CSV</button>
-                             <button id="add-supplier-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Add Supplier</button>
-                             <input type="file" id="supplier-csv-input" class="hidden" accept=".csv">
-                        </div>
-                    </div>
-                    <div id="suppliers-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                </div>
-
-                <div id="departments-tab" class="tab-content hidden">
-                    <div class="sm:flex sm:items-center sm:justify-between mb-4">
-                        <h2 class="text-2xl font-bold">Departments</h2>
-                        <div class="mt-4 sm:mt-0 sm:ml-4 flex gap-2">
-                            <button id="import-department-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Import CSV</button>
-                            <button id="export-department-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Export CSV</button>
-                            <button id="add-department-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Add Department</button>
-                            <input type="file" id="department-csv-input" class="hidden" accept=".csv">
-                        </div>
-                    </div>
-                    <div id="departments-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                </div>
-
-                 <div id="staff-tab" class="tab-content hidden">
-                    <div class="sm:flex sm:items-center sm:justify-between mb-4">
-                        <h2 class="text-2xl font-bold">Staff</h2>
-                        <div class="mt-4 sm:mt-0 sm:ml-4 flex gap-2">
-                             <button id="import-staff-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Import CSV</button>
-                             <button id="export-staff-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Export CSV</button>
-                        </div>
-                        <input type="file" id="staff-csv-input" class="hidden" accept=".csv">
-                    </div>
-                     <div id="staff-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Modals -->
-    <div id="productModal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form id="product-form" class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Add Product</h3>
-                    <input type="hidden" id="product-id">
-                    <div class="mt-2 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-                        <div>
-                            <label for="product-name-en" class="block text-sm font-medium text-gray-700">Name (EN)</label>
-                            <input type="text" id="product-name-en" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
-                        </div>
-                        <div>
-                            <label for="product-name-th" class="block text-sm font-medium text-gray-700">Name (TH)</label>
-                            <input type="text" id="product-name-th" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="product-category-en" class="block text-sm font-medium text-gray-700">Category (EN)</label>
-                            <input type="text" id="product-category-en" list="category-list-en" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <datalist id="category-list-en"></datalist>
-                        </div>
-                        <div>
-                            <label for="product-category-th" class="block text-sm font-medium text-gray-700">Category (TH)</label>
-                            <input type="text" id="product-category-th" list="category-list-th" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <datalist id="category-list-th"></datalist>
-                        </div>
-                        <div>
-                            <label for="product-packaging-en" class="block text-sm font-medium text-gray-700">Packaging (EN)</label>
-                            <input type="text" id="product-packaging-en" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="product-packaging-th" class="block text-sm font-medium text-gray-700">Packaging (TH)</label>
-                            <input type="text" id="product-packaging-th" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                         <div class="sm:col-span-2">
-                            <label for="product-supplier" class="block text-sm font-medium text-gray-700">Supplier</label>
-                            <select id="product-supplier" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"></select>
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label for="product-reference" class="block text-sm font-medium text-gray-700">Product Reference</label>
-                            <input type="text" id="product-reference" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label for="product-keywords" class="block text-sm font-medium text-gray-700">Keywords (comma separated)</label>
-                            <input type="text" id="product-keywords" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                         <div class="sm:col-span-2">
-                            <label for="product-image-url" class="block text-sm font-medium text-gray-700">Image URL</label>
-                            <input type="url" id="product-image-url" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                        <div class="sm:col-span-2 flex items-center">
-                            <input id="product-is-active" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                            <label for="product-is-active" class="ml-2 block text-sm text-gray-900">Active</label>
-                        </div>
-                    </div>
-                </form>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="submit" form="product-form" id="save-product-btn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Save</button>
-                    <button type="button" id="cancel-product-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="simple-modal" class="fixed z-10 inset-0 overflow-y-auto hidden">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form id="simple-form">
-                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="simple-modal-title">Modal</h3>
-                        <input type="hidden" id="simple-modal-id">
-                        <div id="simple-modal-fields" class="mt-4 space-y-4"></div>
-                     </div>
-                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                         <button type="submit" id="simple-modal-save" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Save</button>
-                         <button type="button" id="simple-modal-cancel" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">Cancel</button>
-                         <button type="button" id="simple-modal-delete" class="hidden mr-auto w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:w-auto sm:text-sm">Delete</button>
-                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
+    
     <div id="toast-container"></div>
 
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 hidden">
+        
+        <header class="mb-8 flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+            <div>
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800" data-key="management_dashboard">Management Dashboard</h1>
+                <p class="text-lg text-gray-500 mt-1" data-key="dashboard_subtitle">View orders and manage products.</p>
+            </div>
+            <div class="w-full sm:w-auto flex flex-col sm:flex-row items-end sm:items-center gap-4">
+                 <p id="user-display" class="text-sm text-gray-600 w-full sm:w-auto text-right sm:text-left"></p>
+                 <div class="w-full sm:w-auto justify-between flex items-center gap-2">
+                    <div id="lang-switcher" class="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-lg p-1">
+                        <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
+                        <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
+                    </div>
+                     <div class="relative sm:hidden">
+                        <button id="menu-button" class="p-2 rounded-md hover:bg-gray-200">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                        </button>
+                        <div id="mobile-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                            <a href="./my-orders.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="my_orders">My Orders</a>
+                            <a href="./index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="create_order">Create Order</a>
+                            <button id="logout-btn-mobile" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="logout">Logout</button>
+                        </div>
+                    </div>
+                    <div class="hidden sm:flex items-center gap-2">
+                        <a href="./index.html" class="flex-1 justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-center" data-key="catalog">Catalog</a>
+                        <button id="logout-btn" class="flex-1 justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" data-key="logout">Logout</button>
+                    </div>
+                 </div>
+            </div>
+        </header>
+        
+        <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
+            <h2 class="text-3xl font-bold mb-6 text-gray-700" data-key="order_processing">Order Processing</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1">
+                    <h3 class="text-2xl font-bold mb-4" data-key="pending_orders">Pending Orders</h3>
+                    <div id="pending-orders-list" class="space-y-4"></div>
+                     <div id="orders-loading" class="text-center py-10">
+                        <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <p class="mt-2 text-gray-500" data-key="loading_orders">Loading orders...</p>
+                    </div>
+                </div>
+                <div class="lg:col-span-2">
+                    <h3 class="text-2xl font-bold mb-4" data-key="final_supplier_list">Final Supplier List</h3>
+                    <p class="text-gray-600 mb-6" data-key="generate_list_subtitle">Click the button to merge all pending orders into a final list, sorted by supplier.</p>
+                    <button id="generate-list-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400" data-key="generate_supplier_list">Generate Supplier List</button>
+                    <div id="supplier-list-container" class="mt-8 hidden bg-gray-50 p-4 rounded-lg border"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
+            <h2 class="text-3xl font-bold mb-6 text-gray-700" data-key="order_history">Order History</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                     <thead class="bg-gray-200">
+                        <tr>
+                            <th class="table-cell text-left font-semibold text-gray-600" data-key="date">Date</th>
+                            <th class="table-cell text-left font-semibold text-gray-600" data-key="department">Department</th>
+                            <th class="table-cell text-left font-semibold text-gray-600" data-key="user">User</th>
+                             <th class="table-cell text-left font-semibold text-gray-600" data-key="status">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-history-table-body"></tbody>
+                </table>
+            </div>
+             <div id="history-loading" class="text-center py-10">
+                <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <p class="mt-2 text-gray-500" data-key="loading_history">Loading history...</p>
+            </div>
+            <div id="history-pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
+             <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+                 <h2 class="text-3xl font-bold text-gray-700" data-key="product_management">Product Management</h2>
+                 <div class="flex flex-col sm:flex-row sm:flex-wrap items-center justify-start sm:justify-end gap-2 w-full md:w-auto">
+                    <input type="file" id="csv-file-input" class="hidden" accept=".csv">
+                    <button id="import-csv-btn" class="w-full sm:w-auto bg-indigo-600 text-white font-bold p-2 rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        <span data-key="import_csv">Import</span>
+                    </button>
+                    <button id="export-csv-btn" class="w-full sm:w-auto bg-gray-700 text-white font-bold p-2 rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        <span data-key="export_csv">Export</span>
+                    </button>
+                    <button id="add-product-btn" class="w-full sm:w-auto bg-green-600 text-white font-bold p-2 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                        <span data-key="add_new_product">Add Product</span>
+                    </button>
+                 </div>
+            </div>
+            <div class="flex flex-col md:flex-row justify-end items-center gap-2 mb-4">
+                <div class="relative w-full md:w-auto">
+                    <input type="text" id="product-search" class="w-full p-2 border rounded-lg text-sm pl-8" placeholder="Search products...">
+                    <svg class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                    <button id="product-clear-search" class="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8-0 100-16 8 8-0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+                <select id="supplier-filter" class="w-full md:w-auto p-2 border rounded-lg text-sm">
+                    <option value="All" data-key="all_suppliers">All Suppliers</option>
+                </select>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="table-cell text-left font-semibold text-gray-600" data-key="image">Image</th>
+                            <th class="table-cell text-left font-semibold text-gray-600 sortable" data-sort="name_en" data-key="product_name">Product Name <span class="sort-icon">⇅</span></th>
+                            <th class="table-cell text-left font-semibold text-gray-600 sortable" data-sort="product_reference" data-key="reference">Reference <span class="sort-icon">⇅</span></th>
+                            <th class="table-cell text-left font-semibold text-gray-600 sortable" data-sort="supplier" data-key="supplier">Supplier <span class="sort-icon">⇅</span></th>
+                            <th class="table-cell text-left font-semibold text-gray-600 sortable" data-sort="isActive" data-key="status">Status <span class="sort-icon">⇅</span></th>
+                            <th class="table-cell text-left font-semibold text-gray-600" data-key="actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table-body"></tbody>
+                </table>
+                 <div id="products-loading" class="text-center py-10">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p class="mt-2 text-gray-500" data-key="loading_products">Loading products...</p>
+                </div>
+                 <div id="products-pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+                     <h2 class="text-3xl font-bold text-gray-700" data-key="staff_management">Staff</h2>
+                     <div class="flex flex-col sm:flex-row sm:flex-wrap items-center justify-start sm:justify-end gap-2 w-full md:w-auto">
+                        <input type="file" id="staff-csv-input" class="hidden" accept=".csv">
+                        <button id="import-staff-btn" class="w-full sm:w-auto bg-indigo-600 text-white font-bold p-2 rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                            <span data-key="import_csv">Import</span>
+                        </button>
+                        <button id="export-staff-btn" class="w-full sm:w-auto bg-gray-700 text-white font-bold p-2 rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            <span data-key="export_csv">Export</span>
+                        </button>
+                        <button id="add-staff-btn" class="w-full sm:w-auto bg-purple-600 text-white font-bold p-2 rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 11a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1v-1z" /></svg>
+                            <span data-key="add_staff_member">Add Staff</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row justify-end items-center gap-2 mb-4">
+                    <div class="relative w-full md:w-auto">
+                        <input type="text" id="staff-search" class="w-full p-2 border rounded-lg text-sm pl-8" placeholder="Search staff...">
+                        <svg class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                        <button id="staff-clear-search" class="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 hidden">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8-0 100-16 8 8-0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="table-cell text-left font-semibold text-gray-600 sortable" data-sort="name" data-key="name">Name <span class="sort-icon">⇅</span></th>
+                                <th class="table-cell text-left font-semibold text-gray-600 sortable" data-sort="departmentId" data-key="department">Department <span class="sort-icon">⇅</span></th>
+                                <th class="table-cell text-left font-semibold text-gray-600" data-key="actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staff-table-body"></tbody>
+                    </table>
+                     <div id="staff-loading" class="text-center py-10">
+                        <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <p class="mt-2 text-gray-500" data-key="loading_staff">Loading staff...</p>
+                    </div>
+                    <div id="staff-pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+                     <h2 class="text-3xl font-bold text-gray-700" data-key="supplier_management">Suppliers</h2>
+                     <div class="flex flex-col sm:flex-row sm:flex-wrap items-center justify-start sm:justify-end gap-2 w-full md:w-auto">
+                        <input type="file" id="supplier-csv-input" class="hidden" accept=".csv">
+                        <button id="import-supplier-btn" class="w-full sm:w-auto bg-indigo-600 text-white font-bold p-2 rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                            <span data-key="import_csv">Import</span>
+                        </button>
+                        <button id="export-supplier-btn" class="w-full sm:w-auto bg-gray-700 text-white font-bold p-2 rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            <span data-key="export_csv">Export</span>
+                        </button>
+                        <button id="add-supplier-btn" class="w-full sm:w-auto bg-orange-600 text-white font-bold p-2 rounded-lg hover:bg-orange-700 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                            <span data-key="add_new_supplier">Add Supplier</span>
+                        </button>
+                    </div>
+                </div>
+                 <div class="flex flex-col md:flex-row justify-end items-center gap-2 mb-4">
+                    <div class="relative w-full md:w-auto">
+                        <input type="text" id="supplier-search" class="w-full p-2 border rounded-lg text-sm pl-8" placeholder="Search suppliers...">
+                        <svg class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                        <button id="supplier-clear-search" class="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 hidden">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8-0 100-16 8 8-0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="table-cell text-left font-semibold text-gray-600 sortable" data-sort="name" data-key="name">Name <span class="sort-icon">⇅</span></th>
+                                <th class="table-cell text-left font-semibold text-gray-600" data-key="actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="suppliers-table-body"></tbody>
+                    </table>
+                     <div id="suppliers-loading" class="text-center py-10">
+                        <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <p class="mt-2 text-gray-500" data-key="loading_suppliers">Loading suppliers...</p>
+                    </div>
+                    <div id="suppliers-pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-sm">
+            <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+                 <h2 class="text-3xl font-bold text-gray-700" data-key="department_management">Departments</h2>
+                  <div class="flex flex-col sm:flex-row sm:flex-wrap items-center justify-start sm:justify-end gap-2 w-full md:w-auto">
+                    <input type="file" id="department-csv-input" class="hidden" accept=".csv">
+                    <button id="import-department-btn" class="w-full sm:w-auto bg-indigo-600 text-white font-bold p-2 rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        <span data-key="import_csv">Import</span>
+                    </button>
+                    <button id="export-department-btn" class="w-full sm:w-auto bg-gray-700 text-white font-bold p-2 rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        <span data-key="export_csv">Export</span>
+                    </button>
+                    <button id="add-department-btn" class="w-full sm:w-auto bg-teal-600 text-white font-bold p-2 rounded-lg hover:bg-teal-700 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                        <span data-key="add_new_department">Add Department</span>
+                    </button>
+                 </div>
+            </div>
+            <div class="flex flex-col md:flex-row justify-end items-center gap-2 mb-4">
+                <div class="relative w-full md:w-auto">
+                    <input type="text" id="department-search" class="w-full p-2 border rounded-lg text-sm pl-8" placeholder="Search departments...">
+                    <svg class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                     <button id="department-clear-search" class="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 hidden">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8-0 100-16 8 8-0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="table-cell text-left font-semibold text-gray-600 sortable" data-sort="name_en" data-key="name_en">Name (EN) <span class="sort-icon">⇅</span></th>
+                            <th class="table-cell text-left font-semibold text-gray-600 sortable" data-sort="name_th" data-key="name_th">Name (TH) <span class="sort-icon">⇅</span></th>
+                            <th class="table-cell text-left font-semibold text-gray-600" data-key="actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="departments-table-body"></tbody>
+                </table>
+                 <div id="departments-loading" class="text-center py-10">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p class="mt-2 text-gray-500" data-key="loading_departments">Loading departments...</p>
+                </div>
+                <div id="departments-pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 id="modal-title" class="text-2xl font-bold text-gray-800" data-key="add_new_product">Add New Product</h2>
+                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <form id="product-form" class="space-y-4">
+                    <input type="hidden" id="product-id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="block font-medium" data-key="name_en">Name (EN)</label><input type="text" id="name_en" class="w-full p-2 border rounded" required></div>
+                        <div><label class="block font-medium" data-key="name_th">Name (TH)</label><input type="text" id="name_th" class="w-full p-2 border rounded"></div>
+                        <div><label class="block font-medium" data-key="product_reference">Product Reference</label><input type="text" id="product_reference" class="w-full p-2 border rounded"></div>
+                        <div><label class="block font-medium" data-key="supplier">Supplier</label><select id="product-supplier-select" class="w-full p-2 border rounded"></select></div>
+                        <div><label class="block font-medium" data-key="category_en">Category (EN)</label><input type="text" id="category_en" class="w-full p-2 border rounded"></div>
+                        <div><label class="block font-medium" data-key="category_th">Category (TH)</label><input type="text" id="category_th" class="w-full p-2 border rounded"></div>
+                        <div><label class="block font-medium" data-key="packaging_en">Packaging (EN)</label><input type="text" id="packaging_en" class="w-full p-2 border rounded"></div>
+                        <div><label class="block font-medium" data-key="packaging_th">Packaging (TH)</label><input type="text" id="packaging_th" class="w-full p-2 border rounded"></div>
+                    </div>
+                    <div><label class="block font-medium" data-key="keywords">Search Keywords</label><input type="text" id="keywords" class="w-full p-2 border rounded" placeholder="e.g. straw, drinking, plastic"></div>
+                    <div><label class="block font-medium" data-key="image_url">Image URL</label><input type="url" id="imageUrl" class="w-full p-2 border rounded"></div>
+                    <div class="flex items-center"><input type="checkbox" id="isActive" class="h-4 w-4 rounded mr-2"><label for="isActive" data-key="product_is_active">Product is Active (Visible in catalog)</label></div>
+                </form>
+            </div>
+            <div class="p-4 border-t mt-auto flex justify-end gap-4">
+                <button id="cancel-product-form" type="button" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300" data-key="cancel">Cancel</button>
+                <button id="save-product-form" type="submit" form="product-form" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" data-key="save_product">Save Product</button>
+            </div>
+        </div>
+    </div>
+    <div id="staff-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 id="staff-modal-title" class="text-2xl font-bold text-gray-800" data-key="add_staff_member">Add Staff Member</h2>
+                <button id="close-staff-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6">
+                <form id="staff-form" class="space-y-4">
+                    <input type="hidden" id="staff-id">
+                    <div>
+                        <label class="block font-medium" data-key="user_auth_uid">User Auth UID</label>
+                        <input type="text" id="staff-uid" class="w-full p-2 border rounded" required placeholder="Paste UID from Firebase Auth">
+                        <p class="text-xs text-gray-500 mt-1" data-key="user_auth_uid_subtitle">Create login in Firebase Auth first, then paste the UID here.</p>
+                    </div>
+                    <div><label class="block font-medium" data-key="full_name">Full Name</label><input type="text" id="staff-name" class="w-full p-2 border rounded" required></div>
+                    <div>
+                        <label class="block font-medium" data-key="department">Department</label>
+                        <select id="staff-department-select" class="w-full p-2 border rounded" required></select>
+                    </div>
+                </form>
+            </div>
+            <div class="p-4 border-t flex justify-end gap-4">
+                <button id="cancel-staff-form" type="button" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300" data-key="cancel">Cancel</button>
+                <button id="save-staff-form" type="submit" form="staff-form" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" data-key="save_staff">Save Staff</button>
+            </div>
+        </div>
+    </div>
+    <div id="department-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
+       <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 id="department-modal-title" class="text-2xl font-bold text-gray-800" data-key="add_new_department">Add New Department</h2>
+                <button id="close-department-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6">
+                <form id="department-form" class="space-y-4">
+                    <input type="hidden" id="department-id">
+                    <div><label class="block font-medium" data-key="name_en">Name (EN)</label><input type="text" id="department-name_en" class="w-full p-2 border rounded" required></div>
+                    <div><label class="block font-medium" data-key="name_th">Name (TH)</label><input type="text" id="department-name_th" class="w-full p-2 border rounded"></div>
+                </form>
+            </div>
+            <div class="p-4 border-t flex justify-end gap-4">
+                <button id="cancel-department-form" type="button" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300" data-key="cancel">Cancel</button>
+                <button id="save-department-form" type="submit" form="department-form" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" data-key="save_department">Save Department</button>
+            </div>
+        </div>
+    </div>
+     <div id="supplier-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
+       <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 id="supplier-modal-title" class="text-2xl font-bold text-gray-800" data-key="add_new_supplier">Add New Supplier</h2>
+                <button id="close-supplier-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6">
+                <form id="supplier-form" class="space-y-4">
+                    <input type="hidden" id="supplier-id">
+                    <div><label class="block font-medium" data-key="name">Name</label><input type="text" id="supplier-name" class="w-full p-2 border rounded" required></div>
+                </form>
+            </div>
+            <div class="p-4 border-t flex justify-end gap-4">
+                <button id="cancel-supplier-form" type="button" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300" data-key="cancel">Cancel</button>
+                <button id="save-supplier-form" type="submit" form="supplier-form" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" data-key="save_supplier">Save Supplier</button>
+            </div>
+        </div>
+    </div>
+    <div id="edit-order-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-40 p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 class="text-2xl font-bold text-gray-800" data-key="edit_order">Edit Order</h2>
+                <button id="close-edit-order-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div id="edit-order-items-container" class="p-6 overflow-y-auto"></div>
+            <div class="p-6 border-t mt-auto">
+                <div class="flex justify-end gap-4">
+                    <button id="cancel-edit-order-btn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300" data-key="cancel">Cancel</button>
+                    <button id="update-order-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" data-key="update_order">Update Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, orderBy, where, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // --- Firebase Config ---
-        // === MODIFICATION START: Using the correct environment variable for Firebase config ===
-        let app, auth, db;
-        try {
-            // Check if the __firebase_config variable is provided by the environment
-            if (typeof __firebase_config === 'undefined' || !__firebase_config) {
-                throw new Error("Firebase config is not available in the environment.");
-            }
-            const firebaseConfig = JSON.parse(__firebase_config);
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-        } catch (error) {
-            console.error("FATAL: Could not initialize Firebase.", error);
-            const appLoading = document.getElementById('app-loading');
-            appLoading.innerHTML = `<div class="text-center p-4">
-                <h1 class="text-2xl font-bold text-red-600 mb-2">Application Error</h1>
-                <p class="text-gray-700">Could not initialize Firebase. Please check the console for details.</p>
-                <p class="text-gray-500 text-sm mt-2">The Firebase configuration might be missing or invalid.</p>
-            </div>`;
-            // Stop further script execution by re-throwing the error
-            throw error;
-        }
-        // === MODIFICATION END ===
-
-
-        // --- Global State ---
-        let allProducts = [];
-        let allSuppliers = [];
-        let allDepartments = [];
-        let allStaff = [];
-        let allCategories = [];
-        let currentUser = null;
-
-        // --- UI Elements ---
-        const appLoading = document.getElementById('app-loading');
-        const appContent = document.getElementById('app-content');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const userName = document.getElementById('user-name');
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, getDoc, writeBatch, addDoc, updateDoc, deleteDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // --- Tabs ---
-        const tabButtons = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIqmK_P2JWz3Vr5-u_2b6s6hhyWO9c-sg",
+            authDomain: "da-moreno-orders-app.firebaseapp.com",
+            projectId: "da-moreno-orders-app",
+            storageBucket: "da-moreno-orders-app.appspot.com",
+            messagingSenderId: "545175404745",
+            appId: "1:545175404745:web:4dc2df2c7d3f7b040d18",
+            measurementId: "G-D7K1PT81Q4"
+        };
+        let db, auth;
+        let pendingOrders = [], allProducts = [], allStaff = [], allDepartments = [], processedOrders = [], allSuppliers = [];
+        let currentLang = localStorage.getItem('appLanguage') || 'en';
 
-        // --- Products ---
+        let productsCurrentPage = 1, staffCurrentPage = 1, deptsCurrentPage = 1, historyCurrentPage = 1, suppliersCurrentPage = 1;
+        const itemsPerPage = 10;
+        
+        let currentSorts = {
+            products: { key: 'name_en', dir: 'asc' },
+            staff: { key: 'name', dir: 'asc' },
+            departments: { key: 'name_en', dir: 'asc' },
+            suppliers: { key: 'name', dir: 'asc' }
+        };
+
+        let currentEditingOrder = { id: null, items: [] };
+        
+        const appContainer = document.getElementById('app');
+        const userDisplay = document.getElementById('user-display');
+        const logoutBtn = document.getElementById('logout-btn');
+        const logoutBtnMobile = document.getElementById('logout-btn-mobile');
+        const toastContainer = document.getElementById('toast-container');
+        const accessDeniedMessage = document.getElementById('access-denied');
+        const pendingOrdersList = document.getElementById('pending-orders-list');
+        const ordersLoading = document.getElementById('orders-loading');
+        const generateListBtn = document.getElementById('generate-list-btn');
+        const supplierListContainer = document.getElementById('supplier-list-container');
+        const orderHistoryTableBody = document.getElementById('order-history-table-body');
+        const historyLoading = document.getElementById('history-loading');
+        const historyPaginationControls = document.getElementById('history-pagination-controls');
         const productsTableBody = document.getElementById('products-table-body');
-        const productSearch = document.getElementById('product-search');
+        const productsLoading = document.getElementById('products-loading');
+        const productsPaginationControls = document.getElementById('products-pagination-controls');
         const addProductBtn = document.getElementById('add-product-btn');
-        const productModal = document.getElementById('productModal');
+        const productSearchInput = document.getElementById('product-search');
+        const productClearSearch = document.getElementById('product-clear-search');
+        const productModal = document.getElementById('product-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
         const productForm = document.getElementById('product-form');
-        const saveProductBtn = document.getElementById('save-product-btn');
-        const cancelProductBtn = document.getElementById('cancel-product-btn');
-        const productSupplierSelect = document.getElementById('product-supplier');
-        const categoryEnInput = document.getElementById('product-category-en');
-        const categoryThInput = document.getElementById('product-category-th');
-        const categoryEnDatalist = document.getElementById('category-list-en');
-        const categoryThDatalist = document.getElementById('category-list-th');
-        
-        // --- CSV Import/Export ---
-        const importProductsBtn = document.getElementById('import-products-btn');
-        const exportProductsBtn = document.getElementById('export-products-btn');
-        const productCsvInput = document.getElementById('product-csv-input');
-        
-        const importSupplierBtn = document.getElementById('import-supplier-btn');
-        const exportSupplierBtn = document.getElementById('export-supplier-btn');
-        const supplierCsvInput = document.getElementById('supplier-csv-input');
-
-        const importDepartmentBtn = document.getElementById('import-department-btn');
-        const exportDepartmentBtn = document.getElementById('export-department-btn');
-        const departmentCsvInput = document.getElementById('department-csv-input');
-        
+        const cancelProductFormBtn = document.getElementById('cancel-product-form');
+        const addStaffBtn = document.getElementById('add-staff-btn');
+        const staffSearchInput = document.getElementById('staff-search');
+        const staffClearSearch = document.getElementById('staff-clear-search');
+        const staffTableBody = document.getElementById('staff-table-body');
+        const staffLoading = document.getElementById('staff-loading');
+        const staffPaginationControls = document.getElementById('staff-pagination-controls');
+        const staffModal = document.getElementById('staff-modal');
+        const closeStaffModalBtn = document.getElementById('close-staff-modal-btn');
+        const staffForm = document.getElementById('staff-form');
+        const cancelStaffFormBtn = document.getElementById('cancel-staff-form');
+        const staffDepartmentSelect = document.getElementById('staff-department-select');
+        const addDepartmentBtn = document.getElementById('add-department-btn');
+        const departmentSearchInput = document.getElementById('department-search');
+        const departmentClearSearch = document.getElementById('department-clear-search');
+        const departmentsTableBody = document.getElementById('departments-table-body');
+        const departmentsLoading = document.getElementById('departments-loading');
+        const departmentsPaginationControls = document.getElementById('departments-pagination-controls');
+        const departmentModal = document.getElementById('department-modal');
+        const closeDepartmentModalBtn = document.getElementById('close-department-modal-btn');
+        const departmentForm = document.getElementById('department-form');
+        const cancelDepartmentFormBtn = document.getElementById('cancel-department-form');
+        const langSwitcher = document.getElementById('lang-switcher');
+        const menuButton = document.getElementById('menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const supplierFilter = document.getElementById('supplier-filter');
+        const productSupplierSelect = document.getElementById('product-supplier-select');
+        const addSupplierBtn = document.getElementById('add-supplier-btn');
+        const supplierSearchInput = document.getElementById('supplier-search');
+        const supplierClearSearch = document.getElementById('supplier-clear-search');
+        const suppliersTableBody = document.getElementById('suppliers-table-body');
+        const suppliersLoading = document.getElementById('suppliers-loading');
+        const suppliersPaginationControls = document.getElementById('suppliers-pagination-controls');
+        const supplierModal = document.getElementById('supplier-modal');
+        const closeSupplierModalBtn = document.getElementById('close-supplier-modal-btn');
+        const supplierForm = document.getElementById('supplier-form');
+        const cancelSupplierFormBtn = document.getElementById('cancel-supplier-form');
+        const editOrderModal = document.getElementById('edit-order-modal');
+        const closeEditOrderModalBtn = document.getElementById('close-edit-order-modal-btn');
+        const editOrderItemsContainer = document.getElementById('edit-order-items-container');
+        const updateOrderBtn = document.getElementById('update-order-btn');
+        const cancelEditOrderBtn = document.getElementById('cancel-edit-order-btn');
+        const importCsvBtn = document.getElementById('import-csv-btn');
+        const exportCsvBtn = document.getElementById('export-csv-btn');
+        const csvFileInput = document.getElementById('csv-file-input');
         const importStaffBtn = document.getElementById('import-staff-btn');
         const exportStaffBtn = document.getElementById('export-staff-btn');
         const staffCsvInput = document.getElementById('staff-csv-input');
-        
-        // --- Simple Modal ---
-        const simpleModal = document.getElementById('simple-modal');
-        const simpleModalTitle = document.getElementById('simple-modal-title');
-        const simpleModalFields = document.getElementById('simple-modal-fields');
-        const simpleForm = document.getElementById('simple-form');
-        const simpleModalSave = document.getElementById('simple-modal-save');
-        const simpleModalCancel = document.getElementById('simple-modal-cancel');
-        const simpleModalDelete = document.getElementById('simple-modal-delete');
-        let simpleModalConfig = {};
+        const importSupplierBtn = document.getElementById('import-supplier-btn');
+        const exportSupplierBtn = document.getElementById('export-supplier-btn');
+        const supplierCsvInput = document.getElementById('supplier-csv-input');
+        const importDepartmentBtn = document.getElementById('import-department-btn');
+        const exportDepartmentBtn = document.getElementById('export-department-btn');
+        const departmentCsvInput = document.getElementById('department-csv-input');
 
-        // --- Authentication ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    userName.textContent = `Welcome, ${userData.name}`;
-                    if(userData.department_name_en?.toLowerCase() === 'admin') {
-                        loadInitialData();
+        
+        const translations = {
+            en: {
+                management_dashboard: "Management Dashboard",
+                dashboard_subtitle: "View orders and manage products.",
+                catalog: "Catalog",
+                logout: "Logout",
+                order_processing: "Order Processing",
+                pending_orders: "Pending Orders",
+                loading_orders: "Loading orders...",
+                final_supplier_list: "Final Supplier List",
+                generate_list_subtitle: "Click the button to merge all pending orders into a final list, sorted by supplier.",
+                generate_supplier_list: "Generate Supplier List",
+                order_history: "Order History",
+                loading_history: "Loading history...",
+                product_management: "Product Management",
+                add_new_product: "Add Product",
+                image: "Image",
+                product_name: "Product Name",
+                reference: "Reference",
+                supplier: "Supplier",
+                status: "Status",
+                actions: "Actions",
+                loading_products: "Loading products...",
+                staff_management: "Staff",
+                add_staff_member: "Add Staff",
+                name: "Name",
+                department: "Department",
+                loading_staff: "Loading staff...",
+                department_management: "Departments",
+                add_new_department: "Add Department",
+                name_en: "Name (EN)",
+                name_th: "Name (TH)",
+                loading_departments: "Loading departments...",
+                edit_product: "Edit Product",
+                product_reference: "Product Reference",
+                category_en: "Category (EN)",
+                category_th: "Category (TH)",
+                packaging_en: "Packaging (EN)",
+                packaging_th: "Packaging (TH)",
+                image_url: "Image URL",
+                product_is_active: "Product is Active (Visible in catalog)",
+                cancel: "Cancel",
+                save_product: "Save Product",
+                edit_staff_member: "Edit Staff Member",
+                user_auth_uid: "User Auth UID",
+                user_auth_uid_subtitle: "Create login in Firebase Auth first, then paste the UID here.",
+                full_name: "Full Name",
+                save_staff: "Save Staff",
+                edit_department: "Edit Department",
+                save_department: "Save Department",
+                logged_in_as: "Logged in as:",
+                date: "Date",
+                user: "User",
+                all_suppliers: "All Suppliers",
+                keywords: "Search Keywords",
+                supplier_management: "Suppliers",
+                add_new_supplier: "Add Supplier",
+                save_supplier: "Save Supplier",
+                my_orders: "My Orders",
+                create_order: "Create Order",
+                edit_order: "Edit Order",
+                update_order: "Update Order",
+                import_csv: "Import",
+                export_csv: "Export",
+            },
+            th: {
+                management_dashboard: "แดชบอร์ดการจัดการ",
+                dashboard_subtitle: "ดูคำสั่งซื้อและจัดการสินค้า",
+                catalog: "แคตตาล็อก",
+                logout: "ออกจากระบบ",
+                order_processing: "การประมวลผลคำสั่งซื้อ",
+                pending_orders: "คำสั่งซื้อที่รอดำเนินการ",
+                loading_orders: "กำลังโหลดคำสั่งซื้อ...",
+                final_supplier_list: "รายชื่อซัพพลายเออร์สุดท้าย",
+                generate_list_subtitle: "คลิกปุ่มเพื่อรวมคำสั่งซื้อที่รอดำเนินการทั้งหมดเป็นรายการสุดท้าย เรียงตามซัพพลายเออร์",
+                generate_supplier_list: "สร้างรายชื่อซัพพลายเออร์",
+                order_history: "ประวัติคำสั่งซื้อ",
+                loading_history: "กำลังโหลดประวัติ...",
+                product_management: "การจัดการสินค้า",
+                add_new_product: "เพิ่มสินค้า",
+                image: "รูปภาพ",
+                product_name: "ชื่อสินค้า",
+                reference: "อ้างอิง",
+                supplier: "ซัพพลายเออร์",
+                status: "สถานะ",
+                actions: "การดำเนินการ",
+                loading_products: "กำลังโหลดสินค้า...",
+                staff_management: "พนักงาน",
+                add_staff_member: "เพิ่มพนักงาน",
+                name: "ชื่อ",
+                department: "แผนก",
+                loading_staff: "กำลังโหลดพนักงาน...",
+                department_management: "แผนก",
+                add_new_department: "เพิ่มแผนก",
+                name_en: "ชื่อ (อังกฤษ)",
+                name_th: "ชื่อ (ไทย)",
+                loading_departments: "กำลังโหลดแผนก...",
+                edit_product: "แก้ไขสินค้า",
+                product_reference: "การอ้างอิงสินค้า",
+                category_en: "หมวดหมู่ (อังกฤษ)",
+                category_th: "หมวดหมู่ (ไทย)",
+                packaging_en: "บรรจุภัณฑ์ (อังกฤษ)",
+                packaging_th: "บรรจุภัณฑ์ (ไทย)",
+                image_url: "URL รูปภาพ",
+                product_is_active: "สินค้าใช้งานอยู่ (แสดงในแคตตาล็อก)",
+                cancel: "ยกเลิก",
+                save_product: "บันทึกสินค้า",
+                edit_staff_member: "แก้ไขพนักงาน",
+                user_auth_uid: "UID การยืนยันตัวตนผู้ใช้",
+                user_auth_uid_subtitle: "สร้างการเข้าสู่ระบบใน Firebase Auth ก่อน แล้ววาง UID ที่นี่",
+                full_name: "ชื่อเต็ม",
+                save_staff: "บันทึกพนักงาน",
+                edit_department: "แก้ไขแผนก",
+                save_department: "บันทึกแผนก",
+                logged_in_as: "เข้าสู่ระบบในชื่อ:",
+                date: "วันที่",
+                user: "ผู้ใช้",
+                all_suppliers: "ซัพพลายเออร์ทั้งหมด",
+                keywords: "คำค้นหา",
+                supplier_management: "ซัพพลายเออร์",
+                add_new_supplier: "เพิ่มซัพพลายเออร์",
+                save_supplier: "บันทึกซัพพลายเออร์",
+                my_orders: "คำสั่งซื้อของฉัน",
+                create_order: "สร้างคำสั่งซื้อ",
+                edit_order: "แก้ไขคำสั่งซื้อ",
+                update_order: "อัปเดตคำสั่งซื้อ",
+                import_csv: "นำเข้า",
+                export_csv: "ส่งออก",
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('appLanguage', lang);
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.dataset.key;
+                if (translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.dataset.lang === lang) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            renderPendingOrders();
+            renderOrderHistory();
+            renderProductsTable();
+            renderStaffTable();
+            renderDepartmentsTable();
+            renderSuppliersTable();
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.className = `toast text-white py-3 px-6 rounded-lg shadow-lg mb-2 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3000);
+        }
+
+        async function handleCancelOrder(orderId) {
+            if (confirm(currentLang === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการยกเลิกคำสั่งซื้อนี้?' : 'Are you sure you want to cancel this order?')) {
+                try {
+                    await updateDoc(doc(db, "orders", orderId), { status: "Cancelled" });
+                    showToast(currentLang === 'th' ? 'ยกเลิกคำสั่งซื้อแล้ว' : 'Order cancelled.');
+                } catch (error) {
+                    console.error("Error cancelling order:", error);
+                    showToast(currentLang === 'th' ? 'ไม่สามารถยกเลิกคำสั่งซื้อได้' : 'Could not cancel order.', true);
+                }
+            }
+        }
+        
+        function handleEditOrder(orderId) {
+            const order = pendingOrders.find(o => o.id === orderId);
+            if (!order) return;
+            currentEditingOrder.id = order.id;
+            currentEditingOrder.items = JSON.parse(JSON.stringify(order.items)); // Deep copy
+            renderEditOrderModal();
+            editOrderModal.classList.remove('hidden');
+            editOrderModal.classList.add('flex');
+        }
+
+        function renderEditOrderModal() {
+            editOrderItemsContainer.innerHTML = '';
+            if (currentEditingOrder.items.length === 0) {
+                 editOrderItemsContainer.innerHTML = `<p class="text-gray-500 text-center">${currentLang === 'th' ? 'คำสั่งซื้อนี้ว่างเปล่า' : 'This order is empty.'}</p>`;
+            } else {
+                 currentEditingOrder.items.forEach(item => {
+                    const itemHtml = `<div class="flex items-center justify-between py-3 border-b last:border-b-0"><div><p class="font-semibold">${item[`productName_${currentLang}`] || item.productName}</p><p class="text-sm text-gray-500">${currentLang === 'th' ? 'ต่อ' : 'Per'} ${item[`packaging_${currentLang}`] || item.packaging}</p></div><div class="flex items-center gap-3"><button data-id="${item.productId}" class="quantity-btn decrease-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">-</button><span class="font-medium w-8 text-center">${item.quantity}</span><button data-id="${item.productId}" class="quantity-btn increase-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">+</button><button data-id="${item.productId}" class="remove-item text-red-500 hover:text-red-700 ml-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div></div>`;
+                    editOrderItemsContainer.insertAdjacentHTML('beforeend', itemHtml);
+                });
+            }
+        }
+        
+        async function handleUpdateOrder() {
+            if (!currentEditingOrder.id) return;
+            const orderRef = doc(db, "orders", currentEditingOrder.id);
+            try {
+                if(currentEditingOrder.items.length === 0) {
+                    if(confirm(currentLang === 'th' ? 'คำสั่งซื้อนี้จะถูกลบเนื่องจากไม่มีรายการสินค้า ยืนยัน?' : 'This order will be deleted as it has no items. Confirm?')) {
+                        await deleteDoc(orderRef);
+                        showToast(currentLang === 'th' ? 'ลบคำสั่งซื้อแล้ว' : 'Order deleted!');
                     } else {
-                        window.location.href = '/';
+                        return;
                     }
                 } else {
-                     window.location.href = '/login.html';
+                    await updateDoc(orderRef, { items: currentEditingOrder.items });
+                    showToast(currentLang === 'th' ? 'อัปเดตคำสั่งซื้อแล้ว' : 'Order updated!');
                 }
-            } else {
-                window.location.href = '/login.html';
+                editOrderModal.classList.add('hidden');
+                editOrderModal.classList.remove('flex');
+            } catch (error) {
+                console.error("Error updating order:", error);
+                showToast(currentLang === 'th' ? 'ไม่สามารถอัปเดตคำสั่งซื้อได้' : 'Could not update order.', true);
             }
-        });
-        
-        async function loadInitialData() {
-            await Promise.all([
-                fetchSuppliers(),
-                fetchDepartments(),
-                fetchStaff(),
-                fetchProducts()
-            ]);
-            appLoading.classList.add('hidden');
-            appContent.classList.remove('hidden');
-            
-            switchTab('products');
         }
 
-        // --- Data Fetching ---
-        async function fetchProducts() {
-            const productsCol = collection(db, "products");
-            const q = query(productsCol, orderBy("name_en"));
-            const productSnapshot = await getDocs(q);
-            allProducts = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderProducts();
-            await fetchCategories();
-        }
 
-        async function fetchCategories() {
-            const categories = new Map();
-            allProducts.forEach(product => {
-                if (product.category_en && !categories.has(product.category_en.toLowerCase())) {
-                    categories.set(product.category_en.toLowerCase(), {
-                        name_en: product.category_en,
-                        name_th: product.category_th || ''
+        function renderPendingOrders() {
+            pendingOrdersList.innerHTML = '';
+            if (pendingOrders.length === 0) {
+                pendingOrdersList.innerHTML = `<p class="text-gray-500">${translations[currentLang].pending_orders.toLowerCase() === 'คำสั่งซื้อที่รอดำเนินการ' ? 'ไม่มีคำสั่งซื้อที่รอดำเนินการ' : 'No pending orders.'}</p>`;
+                generateListBtn.disabled = true; return;
+            }
+            generateListBtn.disabled = false;
+            const ordersByDept = pendingOrders.reduce((acc, order) => {
+                const deptName = order[`departmentName_${currentLang}`] || order.departmentName || 'Unknown Dept';
+                const user = allStaff.find(s => s.id === order.userId);
+                const userName = user ? user.name : 'Unknown User';
+                if (!acc[deptName]) acc[deptName] = {};
+                if (!acc[deptName][userName]) acc[deptName][userName] = [];
+                acc[deptName][userName].push(order);
+                return acc;
+            }, {});
+
+            let html = '';
+            for (const dept in ordersByDept) {
+                html += `<div class="border rounded-lg p-4"><h3 class="font-bold text-xl">${dept}</h3>`;
+                for (const user in ordersByDept[dept]) {
+                    const orders = ordersByDept[dept][user];
+                    html += `<div class="mt-2 pl-4 border-l-2"><p class="font-semibold text-md flex justify-between items-center">${user}</p>`;
+                    orders.forEach(order => {
+                        const orderItemsHtml = order.items.map(item => `<li>${item.quantity} x ${item[`productName_${currentLang}`] || item.productName}</li>`).join('');
+                        html += `<div class="relative mt-2">`;
+                        html += `<ul class="list-disc list-inside text-gray-600">${orderItemsHtml}</ul>`;
+                        if (order.notes) {
+                            html += `<p class="text-sm text-gray-500 mt-1 pl-5"><strong>Note:</strong> ${order.notes}</p>`;
+                        }
+                        html += `<div class="flex gap-2 mt-2">
+                                    <button data-id="${order.id}" class="edit-order-btn text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">${currentLang === 'th' ? 'แก้ไข' : 'Edit'}</button>
+                                    <button data-id="${order.id}" class="cancel-order-btn text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200">${currentLang === 'th' ? 'ยกเลิก' : 'Cancel'}</button>
+                                 </div>`;
+                        html += `</div>`;
                     });
+                    html += `</div>`;
                 }
-            });
-            allCategories = Array.from(categories.values()).sort((a,b) => a.name_en.localeCompare(b.name_en));
-            populateCategoryDatalists();
+                html += `</div>`;
+            }
+            pendingOrdersList.innerHTML = html;
         }
 
-        async function fetchSuppliers() {
-            const suppliersCol = collection(db, "suppliers");
-            const q = query(suppliersCol, orderBy("name"));
-            const supplierSnapshot = await getDocs(q);
-            allSuppliers = supplierSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderSuppliers();
-        }
-        
-        async function fetchDepartments() {
-            const departmentsCol = collection(db, "departments");
-            const departmentSnapshot = await getDocs(collection(db, "departments"));
-            allDepartments = departmentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderDepartments();
-        }
-        
-        async function fetchStaff() {
-             const staffSnapshot = await getDocs(collection(db, "users"));
-             allStaff = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-             renderStaff();
-        }
-
-        // --- Rendering ---
-        function renderProducts(filter = '') {
-            const filteredProducts = allProducts.filter(p => 
-                p.name_en.toLowerCase().includes(filter.toLowerCase()) ||
-                (p.name_th && p.name_th.toLowerCase().includes(filter.toLowerCase())) ||
-                (p.category_en && p.category_en.toLowerCase().includes(filter.toLowerCase()))
+        function generateSupplierList() {
+            const allItems = pendingOrders.flatMap(order => 
+                order.items.map(item => ({...item}))
             );
-
-            productsTableBody.innerHTML = filteredProducts.map(product => `
-                <tr class="hover:bg-gray-50">
-                    <td class="table-cell">${product.name_en}</td>
-                    <td class="table-cell">${product.name_th || ''}</td>
-                    <td class="table-cell">${product.category_en || ''}</td>
-                    <td class="table-cell">${allSuppliers.find(s => s.id === product.supplier)?.name || 'N/A'}</td>
-                    <td class="table-cell">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                            ${product.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                    </td>
-                    <td class="table-cell text-right text-sm font-medium">
-                        <button class="text-blue-600 hover:text-blue-900 edit-product-btn" data-id="${product.id}">Edit</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-        
-        function renderGenericList(elementId, items, config) {
-            const container = document.getElementById(elementId);
-            container.innerHTML = items.map(item => `
-                <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-                    <div>
-                        ${config.fields.map(field => `<p class="font-medium ${field.primary ? 'text-lg' : 'text-sm text-gray-500'}">${item[field.key] || ''}</p>`).join('')}
-                    </div>
-                    <button class="text-blue-600 hover:text-blue-900 edit-btn" data-type="${config.type}" data-id="${item.id}">Edit</button>
-                </div>
-            `).join('');
-        }
-        
-        function renderSuppliers() { renderGenericList('suppliers-list', allSuppliers, { type: 'supplier', fields: [{ key: 'name', primary: true }] }); }
-        function renderDepartments() { renderGenericList('departments-list', allDepartments, { type: 'department', fields: [{ key: 'name_en', primary: true }, { key: 'name_th', primary: false }] }); }
-        function renderStaff() {
-            const staffWithDept = allStaff.map(s => ({
-                ...s,
-                department_name_en: allDepartments.find(d => d.id === s.departmentId)?.name_en || 'N/A'
-            }));
-            renderGenericList('staff-list', staffWithDept, { type: 'staff', fields: [{key: 'name', primary: true}, {key: 'department_name_en', primary: false}] });
-        }
-        
-        function populateCategoryDatalists() {
-            categoryEnDatalist.innerHTML = allCategories.map(cat => `<option value="${cat.name_en}"></option>`).join('');
-            categoryThDatalist.innerHTML = allCategories.map(cat => `<option value="${cat.name_th}"></option>`).join('');
-        }
-
-        // --- Event Listeners ---
-        logoutBtn.addEventListener('click', () => signOut(auth));
-        
-        productSearch.addEventListener('input', (e) => renderProducts(e.target.value));
-
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => switchTab(button.dataset.tab));
-        });
-
-        // --- Product Modal Logic ---
-        addProductBtn.addEventListener('click', openProductModal);
-        cancelProductBtn.addEventListener('click', closeProductModal);
-        productModal.addEventListener('click', (e) => { if (e.target === productModal) closeProductModal(); });
-
-        productsTableBody.addEventListener('click', (e) => {
-            if (e.target.classList.contains('edit-product-btn')) {
-                const productId = e.target.dataset.id;
-                const product = allProducts.find(p => p.id === productId);
-                openProductModal(product);
-            }
-        });
-
-        productForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('product-id').value;
-            const productData = {
-                name_en: document.getElementById('product-name-en').value,
-                name_th: document.getElementById('product-name-th').value,
-                category_en: document.getElementById('product-category-en').value,
-                category_th: document.getElementById('product-category-th').value,
-                packaging_en: document.getElementById('product-packaging-en').value,
-                packaging_th: document.getElementById('product-packaging-th').value,
-                supplier: document.getElementById('product-supplier').value,
-                product_reference: document.getElementById('product-reference').value,
-                keywords: document.getElementById('product-keywords').value,
-                imageUrl: document.getElementById('product-image-url').value,
-                isActive: document.getElementById('product-is-active').checked
-            };
-
-            try {
-                const docRef = id ? doc(db, 'products', id) : doc(collection(db, 'products'));
-                await setDoc(docRef, productData, { merge: true });
-                showToast(id ? 'Product updated successfully' : 'Product added successfully', 'success');
-                fetchProducts();
-                closeProductModal();
-            } catch (error) {
-                console.error("Error saving product:", error);
-                showToast('Error saving product', 'error');
-            }
-        });
-
-        categoryEnInput.addEventListener('input', (e) => {
-            const selectedEn = e.target.value;
-            const matchedCategory = allCategories.find(cat => cat.name_en.toLowerCase() === selectedEn.toLowerCase());
-            if (matchedCategory) {
-                categoryThInput.value = matchedCategory.name_th;
-            }
-        });
-
-        categoryThInput.addEventListener('input', (e) => {
-            const selectedTh = e.target.value;
-            const matchedCategory = allCategories.find(cat => cat.name_th === selectedTh);
-             if (matchedCategory) {
-                categoryEnInput.value = matchedCategory.name_en;
-            }
-        });
-
-        // --- Simple Modal Logic ---
-        document.getElementById('suppliers-list').addEventListener('click', (e) => handleGenericEdit(e, 'supplier'));
-        document.getElementById('departments-list').addEventListener('click', (e) => handleGenericEdit(e, 'department'));
-        document.getElementById('staff-list').addEventListener('click', (e) => handleGenericEdit(e, 'staff'));
-
-        document.getElementById('add-supplier-btn').addEventListener('click', () => openSimpleModal('supplier'));
-        document.getElementById('add-department-btn').addEventListener('click', () => openSimpleModal('department'));
-
-        simpleModalCancel.addEventListener('click', closeSimpleModal);
-        simpleModal.addEventListener('click', (e) => { if (e.target === simpleModal) closeSimpleModal(); });
-        simpleForm.addEventListener('submit', handleSimpleSave);
-        simpleModalDelete.addEventListener('click', handleSimpleDelete);
-
-
-        function handleGenericEdit(e, type) {
-            if (e.target.classList.contains('edit-btn')) {
-                const id = e.target.dataset.id;
-                openSimpleModal(type, id);
-            }
-        }
-
-        function openSimpleModal(type, id = null) {
-            const item = id ? getStoreForType(type).find(i => i.id === id) : {};
             
-            const configs = {
-                supplier: {
-                    title: id ? 'Edit Supplier' : 'Add Supplier',
-                    collection: 'suppliers',
-                    fields: [ { key: 'name', label: 'Supplier Name', type: 'text', required: true } ]
-                },
-                department: {
-                    title: id ? 'Edit Department' : 'Add Department',
-                    collection: 'departments',
-                    fields: [
-                        { key: 'name_en', label: 'Name (EN)', type: 'text', required: true },
-                        { key: 'name_th', label: 'Name (TH)', type: 'text' }
-                    ]
-                },
-                 staff: {
-                    title: 'Edit Staff',
-                    collection: 'users',
-                    fields: [
-                        { key: 'name', label: 'Name', type: 'text', required: true },
-                        { key: 'departmentId', label: 'Department', type: 'select', options: allDepartments.map(d => ({value: d.id, text: d.name_en})) }
-                    ]
+            const mergedItems = {};
+            allItems.forEach(item => {
+                const key = item.productId;
+                if (!mergedItems[key]) {
+                    mergedItems[key] = { ...item, quantity: 0 };
                 }
-            };
-            
-            simpleModalConfig = configs[type];
-            simpleModalTitle.textContent = simpleModalConfig.title;
-            
-            simpleModalFields.innerHTML = simpleModalConfig.fields.map(field => {
-                if (field.type === 'select') {
-                    return `
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">${field.label}</label>
-                            <select id="field-${field.key}" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                                ${field.options.map(opt => `<option value="${opt.value}" ${item[field.key] === opt.value ? 'selected' : ''}>${opt.text}</option>`).join('')}
-                            </select>
-                        </div>`;
-                }
-                return `
-                    <div>
-                        <label for="field-${field.key}" class="block text-sm font-medium text-gray-700">${field.label}</label>
-                        <input type="${field.type}" id="field-${field.key}" value="${item[field.key] || ''}" ${field.required ? 'required' : ''} class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    </div>`;
-            }).join('');
-            
-            document.getElementById('simple-modal-id').value = id || '';
-            simpleModalDelete.classList.toggle('hidden', !id || !simpleModalConfig.collection);
-            simpleModal.classList.remove('hidden');
-        }
-        
-        function getStoreForType(type) {
-            if (type === 'supplier') return allSuppliers;
-            if (type === 'department') return allDepartments;
-            if (type === 'staff') return allStaff;
-            return [];
-        }
-
-        async function handleSimpleSave(e) {
-            e.preventDefault();
-            const id = document.getElementById('simple-modal-id').value;
-            const data = {};
-            simpleModalConfig.fields.forEach(field => {
-                data[field.key] = document.getElementById(`field-${field.key}`).value;
+                mergedItems[key].quantity += item.quantity;
             });
 
-            try {
-                const docRef = id ? doc(db, simpleModalConfig.collection, id) : doc(collection(db, simpleModalConfig.collection));
-                await setDoc(docRef, data, { merge: true });
-                showToast(`${simpleModalConfig.title.split(' ')[1]} saved.`, 'success');
-                await loadInitialData();
-                closeSimpleModal();
-            } catch (error) {
-                console.error("Error saving:", error);
-                showToast('Error saving.', 'error');
-            }
-        }
+            const sortedBySupplier = Object.values(mergedItems).reduce((acc, item) => {
+                const supplier = allSuppliers.find(s => s.id === item.supplier)?.name || 'Uncategorized';
+                if (!acc[supplier]) acc[supplier] = [];
+                acc[supplier].push(item);
+                return acc;
+            }, {});
 
-        async function handleSimpleDelete() {
-            const id = document.getElementById('simple-modal-id').value;
-            if (!id || !confirm('Are you sure you want to delete this item?')) return;
-            try {
-                await deleteDoc(doc(db, simpleModalConfig.collection, id));
-                showToast('Item deleted.', 'success');
-                await loadInitialData();
-                closeSimpleModal();
-            } catch (error) {
-                console.error("Error deleting:", error);
-                showToast('Error deleting item.', 'error');
+            let html = `<button id="mark-processed-btn" class="w-full mb-6 bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-yellow-600">${currentLang === 'th' ? 'ทำเครื่องหมายทั้งหมดว่าประมวลผลแล้วและล้างรายการ' : 'Mark All as Processed & Clear List'}</button>`;
+            for (const supplier in sortedBySupplier) {
+                html += `<h4 class="text-xl font-bold mt-4 mb-2 border-b pb-2">${supplier}</h4>`;
+                html += `<ul class="space-y-1 font-mono">`;
+                sortedBySupplier[supplier].sort((a,b) => (a.productRef || '').localeCompare(b.productRef || '')).forEach(item => {
+                    html += `<li>${item.productRef || 'NO-REF'} - ${item[`productName_${currentLang}`] || item.productName}: ${item.quantity} ${item[`packaging_${currentLang}`] || item.packaging || 'unit'}(s)</li>`;
+                });
+                html += `</ul>`;
             }
+            supplierListContainer.innerHTML = html;
+            supplierListContainer.classList.remove('hidden');
         }
         
-        function closeSimpleModal() {
-            simpleModal.classList.add('hidden');
-            simpleForm.reset();
-        }
+        function renderOrderHistory() {
+             orderHistoryTableBody.innerHTML = '';
+            const totalPages = Math.ceil(processedOrders.length / itemsPerPage);
+            const startIndex = (historyCurrentPage - 1) * itemsPerPage;
+            const paginatedOrders = processedOrders.slice(startIndex, startIndex + itemsPerPage);
 
-        // --- Modal & UI Helpers ---
-        function openProductModal(product = null) {
-            productForm.reset();
-            document.getElementById('modal-title').textContent = product ? 'Edit Product' : 'Add Product';
-            document.getElementById('product-id').value = product ? product.id : '';
-            
-            productSupplierSelect.innerHTML = allSuppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-
-            if (product) {
-                document.getElementById('product-name-en').value = product.name_en || '';
-                document.getElementById('product-name-th').value = product.name_th || '';
-                document.getElementById('product-category-en').value = product.category_en || '';
-                document.getElementById('product-category-th').value = product.category_th || '';
-                document.getElementById('product-packaging-en').value = product.packaging_en || '';
-                document.getElementById('product-packaging-th').value = product.packaging_th || '';
-                document.getElementById('product-supplier').value = product.supplier || '';
-                document.getElementById('product-reference').value = product.product_reference || '';
-                document.getElementById('product-keywords').value = product.keywords || '';
-                document.getElementById('product-image-url').value = product.imageUrl || '';
-                document.getElementById('product-is-active').checked = product.isActive !== false;
+            if (paginatedOrders.length === 0) {
+                orderHistoryTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4">${currentLang === 'th' ? 'ไม่มีประวัติคำสั่งซื้อ' : 'No order history found.'}</td></tr>`;
             } else {
-                 document.getElementById('product-is-active').checked = true;
+                 paginatedOrders.forEach(order => {
+                    const user = allStaff.find(s => s.id === order.userId);
+                    const userName = user ? user.name : 'Unknown User';
+                    const itemsHtml = order.items.map(item => `<li class="text-gray-600">${item.quantity} x ${item.productName}</li>`).join('');
+                    const statusClass = order.status === 'Cancelled' ? 'text-red-500' : 'text-gray-500';
+                    const orderDate = order.createdAt?.toDate().toLocaleDateString() || 'N/A';
+                    const row = `
+                        <tr class="border-b order-history-row cursor-pointer">
+                            <td class="table-cell">${orderDate}</td>
+                            <td class="table-cell">${order.departmentName}</td>
+                            <td class="table-cell">${userName}</td>
+                            <td class="table-cell ${statusClass}">${order.status}</td>
+                        </tr>
+                        <tr class="bg-gray-50 hidden">
+                            <td colspan="4" class="p-4">
+                                <ul class="list-disc list-inside">${itemsHtml}</ul>
+                            </td>
+                        </tr>
+                    `;
+                    orderHistoryTableBody.insertAdjacentHTML('beforeend', row);
+                });
             }
-
-            productModal.classList.remove('hidden');
-            document.body.classList.add('modal-open');
+            renderPagination('history', historyPaginationControls, totalPages, historyCurrentPage, (page) => {
+                historyCurrentPage = page;
+                renderOrderHistory();
+            });
         }
 
-        function closeProductModal() {
-            productModal.classList.add('hidden');
-            document.body.classList.remove('modal-open');
+        async function markOrdersAsProcessed() {
+            if (!confirm(currentLang === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการทำเครื่องหมายคำสั่งซื้อที่รอดำเนินการทั้งหมดว่าประมวลผลแล้ว? การกระทำนี้ไม่สามารถยกเลิกได้' : 'Are you sure you want to mark all pending orders as processed? This cannot be undone.')) return;
+            const batch = writeBatch(db);
+            pendingOrders.forEach(order => {
+                const orderRef = doc(db, "orders", order.id);
+                batch.update(orderRef, { status: "Processed" });
+            });
+            try { await batch.commit(); showToast(currentLang === 'th' ? 'คำสั่งซื้อถูกทำเครื่องหมายว่าประมวลผลแล้ว' : 'Orders marked as processed.'); supplierListContainer.classList.add('hidden'); } catch (e) { console.error("Error processing orders: ", e); showToast(currentLang === 'th' ? 'เกิดข้อผิดพลาดในการอัปเดตคำสั่งซื้อ ตรวจสอบกฎความปลอดภัย' : 'Error updating orders. Check security rules.', true); }
         }
         
-        function switchTab(tabId) {
-            tabContents.forEach(content => content.classList.add('hidden'));
-            tabButtons.forEach(button => button.classList.remove('active', 'border-blue-600', 'text-blue-600'));
-            
-            document.getElementById(`${tabId}-tab`).classList.remove('hidden');
-            const activeButton = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-            activeButton.classList.add('active', 'border-blue-600', 'text-blue-600');
+        function fetchProcessedOrders() {
+            historyLoading.classList.remove('hidden');
+            const q = query(collection(db, "orders"), where("status", "!=", "Pending"));
+            onSnapshot(q, (snapshot) => {
+                let orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                orders.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                processedOrders = orders;
+                historyLoading.classList.add('hidden');
+                renderOrderHistory();
+            }, (error) => {
+                console.error("Error fetching processed orders:", error);
+                historyLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดประวัติคำสั่งซื้อได้' : 'Could not load order history.'}</p>`;
+            });
         }
 
-        function showToast(message, type = 'info') {
-            const colors = {
-                info: 'bg-blue-500',
-                success: 'bg-green-500',
-                error: 'bg-red-500'
-            };
-            const toast = document.createElement('div');
-            toast.className = `toast ${colors[type]} text-white font-bold rounded-lg shadow-md py-3 px-5`;
-            toast.textContent = message;
-            document.getElementById('toast-container').appendChild(toast);
-            
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+        function fetchPendingOrders() {
+            ordersLoading.classList.remove('hidden'); const q = query(collection(db, "orders"), where("status", "==", "Pending"));
+            onSnapshot(q, (snapshot) => {
+                pendingOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                ordersLoading.classList.add('hidden'); 
+                renderPendingOrders();
+            }, (error) => {
+                console.error("Error fetching pending orders: ", error);
+                ordersLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดคำสั่งซื้อได้' : 'Could not load orders.'}</p>`;
+            });
         }
+        
+        function renderPagination(type, container, totalPages, currentPage, pageClickHandler) {
+            container.innerHTML = '';
+            if (totalPages <= 1) return;
 
-        // --- CSV Functionality ---
-        function parseCSV(text) {
-            const lines = text.split(/\r\n|\n/);
-            const header = lines[0].split(',').map(h => h.trim());
-            const rows = [];
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i]) continue;
-                const values = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
-                const row = header.reduce((obj, h, index) => {
-                    let value = (values[index] || '').trim();
-                    if (value.startsWith('"') && value.endsWith('"')) {
-                        value = value.slice(1, -1);
-                    }
-                    obj[h] = value;
-                    return obj;
-                }, {});
-                rows.push(row);
+            const prevButton = document.createElement('button');
+            prevButton.innerHTML = '&lt;';
+            prevButton.disabled = currentPage === 1;
+            prevButton.className = "px-3 py-1 bg-gray-200 rounded disabled:opacity-50";
+            prevButton.addEventListener('click', () => pageClickHandler(currentPage - 1));
+
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+
+            const nextButton = document.createElement('button');
+            nextButton.innerHTML = '&gt;';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.className = "px-3 py-1 bg-gray-200 rounded disabled:opacity-50";
+            nextButton.addEventListener('click', () => pageClickHandler(currentPage + 1));
+            
+            container.append(prevButton, pageInfo, nextButton);
+        }
+        
+        function applySort(data, sortKey, sortDir) {
+            data.sort((a, b) => {
+                let valA = a[sortKey];
+                let valB = b[sortKey];
+
+                if (sortKey === 'supplier') {
+                    valA = allSuppliers.find(s => s.id === valA)?.name || '';
+                    valB = allSuppliers.find(s => s.id === valB)?.name || '';
+                } else if (sortKey === 'departmentId') {
+                    valA = allDepartments.find(d => d.id === valA)?.[`name_${currentLang}`] || '';
+                    valB = allDepartments.find(d => d.id === valB)?.[`name_${currentLang}`] || '';
+                }
+
+                if (typeof valA === 'string') {
+                    return sortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+                 if (typeof valA === 'boolean') {
+                    return sortDir === 'asc' ? (valA === valB ? 0 : valA ? -1 : 1) : (valA === valB ? 0 : valA ? 1 : -1);
+                }
+                return sortDir === 'asc' ? valA - valB : valB - valA;
+            });
+        }
+        
+        function handleSort(tableType, key) {
+             const sortInfo = currentSorts[tableType];
+             if (sortInfo.key === key) {
+                sortInfo.dir = sortInfo.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortInfo.key = key;
+                sortInfo.dir = 'asc';
             }
-            return rows;
+
+            document.querySelectorAll(`div:has(> #${tableType}-table-body) th.sortable`).forEach(th => {
+                th.classList.remove('asc', 'desc');
+                const icon = th.querySelector('.sort-icon');
+                if (th.dataset.sort === key) {
+                    th.classList.add(sortInfo.dir);
+                    icon.innerHTML = sortInfo.dir === 'asc' ? '↑' : '↓';
+                } else {
+                    icon.innerHTML = '⇅';
+                }
+            });
+
+            switch(tableType) {
+                case 'products': renderProductsTable(); break;
+                case 'staff': renderStaffTable(); break;
+                case 'departments': renderDepartmentsTable(); break;
+                case 'suppliers': renderSuppliersTable(); break;
+            }
+        }
+        
+        function renderProductsTable() {
+            productsTableBody.innerHTML = '';
+            const supplierId = supplierFilter.value;
+            const searchTerm = productSearchInput.value.toLowerCase();
+            
+            let filteredProducts = allProducts.filter(p => {
+                const nameEn = p.name_en || '';
+                const nameTh = p.name_th || '';
+                const ref = p.product_reference || '';
+                const keywords = p.keywords || '';
+                return (supplierId === 'All' || p.supplier === supplierId) && 
+                       (nameEn.toLowerCase().includes(searchTerm) || 
+                        nameTh.toLowerCase().includes(searchTerm) || 
+                        ref.toLowerCase().includes(searchTerm) ||
+                        keywords.toLowerCase().includes(searchTerm));
+            });
+
+            applySort(filteredProducts, currentSorts.products.key, currentSorts.products.dir);
+
+            const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+            const startIndex = (productsCurrentPage - 1) * itemsPerPage;
+            const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+
+            if (paginatedProducts.length === 0) { productsTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">${currentLang === 'th' ? 'ไม่พบสินค้า' : 'No products found.'}</td></tr>`; } 
+            else {
+                paginatedProducts.forEach(product => {
+                    const supplier = allSuppliers.find(s => s.id === product.supplier);
+                    const supplierName = supplier ? supplier.name : 'N/A';
+                    const statusClass = product.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
+                    const row = `<tr class="border-b">
+                        <td class="table-cell"><img src="${product.imageUrl || 'https://placehold.co/100x100/e2e8f0/64748b?text=No+Img'}" class="h-12 w-12 object-cover rounded"></td>
+                        <td class="table-cell font-medium whitespace-normal break-words">${product[`name_${currentLang}`]}</td>
+                        <td class="table-cell text-gray-600">${product.product_reference || 'N/A'}</td>
+                        <td class="table-cell text-gray-600 whitespace-normal break-words">${supplierName}</td>
+                        <td class="table-cell"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">${product.isActive ? (currentLang === 'th' ? 'ใช้งาน' : 'Active') : (currentLang === 'th' ? 'ไม่ใช้งาน' : 'Inactive')}</span></td>
+                        <td class="table-cell">
+                            <div class="flex items-center gap-2">
+                                <button data-id="${product.id}" class="edit-product-btn text-blue-600 hover:underline"><span class="hidden sm:inline">${currentLang === 'th' ? 'แก้ไข' : 'Edit'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                <button data-id="${product.id}" class="delete-product-btn text-red-600 hover:underline"><span class="hidden sm:inline">${currentLang === 'th' ? 'ลบ' : 'Delete'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                            </div>
+                        </td></tr>`;
+                    productsTableBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+            renderPagination('products', productsPaginationControls, totalPages, productsCurrentPage, (page) => {
+                productsCurrentPage = page;
+                renderProductsTable();
+            });
+        }
+        
+        function fetchAllProducts() {
+            productsLoading.classList.remove('hidden');
+            onSnapshot(collection(db, "products"), (snapshot) => {
+                allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                productsLoading.classList.add('hidden'); renderProductsTable();
+            }, (error) => {
+                console.error("Error fetching products: ", error);
+                productsLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดสินค้าได้' : 'Could not load products.'}</p>`;
+            });
+        }
+        
+        function toggleProductModal(show, product = null) {
+            if (show) {
+                productForm.reset();
+                productSupplierSelect.innerHTML = `<option value="">${currentLang === 'th' ? 'เลือกซัพพลายเออร์' : 'Select a supplier'}</option>`;
+                allSuppliers.forEach(s => productSupplierSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+
+                if (product) {
+                    document.getElementById('modal-title').textContent = translations[currentLang].edit_product;
+                    document.getElementById('product-id').value = product.id;
+                    document.getElementById('name_en').value = product.name_en || ''; document.getElementById('name_th').value = product.name_th || '';
+                    document.getElementById('product_reference').value = product.product_reference || '';
+                    document.getElementById('product-supplier-select').value = product.supplier || '';
+                    document.getElementById('category_en').value = product.category_en || ''; document.getElementById('category_th').value = product.category_th || '';
+                    document.getElementById('packaging_en').value = product.packaging_en || ''; document.getElementById('packaging_th').value = product.packaging_th || '';
+                    document.getElementById('keywords').value = product.keywords || '';
+                    document.getElementById('imageUrl').value = product.imageUrl || ''; document.getElementById('isActive').checked = product.isActive !== false;
+                } else { 
+                    document.getElementById('modal-title').textContent = translations[currentLang].add_new_product;
+                    document.getElementById('product-id').value = '';
+                    document.getElementById('isActive').checked = true; 
+                }
+                productModal.classList.remove('hidden'); productModal.classList.add('flex'); document.body.classList.add('modal-open');
+            } else { productModal.classList.add('hidden'); productModal.classList.remove('flex'); document.body.classList.remove('modal-open'); }
+        }
+
+        async function handleSaveProduct(e) {
+            e.preventDefault(); const productId = document.getElementById('product-id').value;
+            const productData = { name_en: document.getElementById('name_en').value, name_th: document.getElementById('name_th').value, product_reference: document.getElementById('product_reference').value, supplier: document.getElementById('product-supplier-select').value, category_en: document.getElementById('category_en').value, category_th: document.getElementById('category_th').value, packaging_en: document.getElementById('packaging_en').value, packaging_th: document.getElementById('packaging_th').value, keywords: document.getElementById('keywords').value, imageUrl: document.getElementById('imageUrl').value, isActive: document.getElementById('isActive').checked };
+            try {
+                if (productId) { await updateDoc(doc(db, "products", productId), productData); showToast(currentLang === 'th' ? 'อัปเดตสินค้าแล้ว' : 'Product updated!'); } else { await addDoc(collection(db, "products"), productData); showToast(currentLang === 'th' ? 'เพิ่มสินค้าแล้ว' : 'Product added!'); }
+                toggleProductModal(false);
+            } catch (error) { console.error("Error saving product:", error); showToast(currentLang === 'th' ? 'ไม่สามารถบันทึกสินค้าได้' : 'Could not save product.', true); }
+        }
+
+        async function handleDeleteProduct(productId) {
+            if (!confirm(currentLang === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบสินค้านี้? การกระทำนี้ไม่สามารถยกเลิกได้' : 'Are you sure you want to delete this product? This action cannot be undone.')) return;
+            try { await deleteDoc(doc(db, "products", productId)); showToast(currentLang === 'th' ? 'ลบสินค้าแล้ว' : 'Product deleted.'); } catch (error) { console.error("Error deleting product:", error); showToast(currentLang === 'th' ? 'ไม่สามารถลบสินค้าได้' : 'Could not delete product.', true); }
+        }
+
+        function renderStaffTable() {
+            staffTableBody.innerHTML = '';
+            const searchTerm = staffSearchInput.value.toLowerCase();
+            let filteredStaff = allStaff.filter(s => (s.name || '').toLowerCase().includes(searchTerm));
+
+            applySort(filteredStaff, currentSorts.staff.key, currentSorts.staff.dir);
+
+            const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
+            const startIndex = (staffCurrentPage - 1) * itemsPerPage;
+            const paginatedStaff = filteredStaff.slice(startIndex, startIndex + itemsPerPage);
+
+            if (paginatedStaff.length === 0) {
+                staffTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${currentLang === 'th' ? 'ไม่พบพนักงาน' : 'No staff members found.'}</td></tr>`;
+            } else {
+                 paginatedStaff.forEach(staff => {
+                    const department = allDepartments.find(d => d.id === staff.departmentId);
+                    const departmentName = department ? department[`name_${currentLang}`] : 'N/A';
+                    const row = `
+                        <tr class="border-b">
+                            <td class="table-cell font-medium whitespace-normal break-words">${staff.name || 'N/A'}</td>
+                            <td class="table-cell text-gray-600 whitespace-normal break-words">${departmentName}</td>
+                            <td class="table-cell">
+                                <div class="flex items-center gap-2">
+                                    <button data-id="${staff.id}" class="edit-staff-btn text-blue-600 hover:underline"><span class="hidden sm:inline">${currentLang === 'th' ? 'แก้ไข' : 'Edit'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                    <button data-id="${staff.id}" class="delete-staff-btn text-red-600 hover:underline"><span class="hidden sm:inline">${currentLang === 'th' ? 'ลบ' : 'Delete'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    staffTableBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+            renderPagination('staff', staffPaginationControls, totalPages, staffCurrentPage, (page) => {
+                staffCurrentPage = page;
+                renderStaffTable();
+            });
+        }
+        
+        async function handleDeleteStaff(staffId) {
+            if (confirm(currentLang === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบพนักงานคนนี้ออกจากแอป? การกระทำนี้จะไม่ลบข้อมูลการเข้าสู่ระบบของพวกเขา คุณต้องทำเช่นนั้นจากคอนโซล Firebase Authentication' : 'Are you sure you want to remove this staff member from the app? This will not delete their login credential. You must do that from the Firebase Authentication console.')) {
+                try {
+                    await deleteDoc(doc(db, "users", staffId));
+                    showToast(currentLang === 'th' ? 'ลบพนักงานออกจากแอปแล้ว' : 'Staff member removed from the app.');
+                } catch (error) {
+                    console.error("Error deleting staff:", error);
+                    showToast(currentLang === 'th' ? 'ไม่สามารถลบพนักงานได้' : 'Could not remove staff member.', true);
+                }
+            }
+        }
+
+        function fetchAllStaff() {
+            staffLoading.classList.remove('hidden');
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                allStaff = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                staffLoading.classList.add('hidden');
+                renderStaffTable();
+                renderPendingOrders();
+            }, (error) => {
+                console.error("Error fetching staff:", error);
+                staffLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดพนักงานได้' : 'Could not load staff.'}</p>`;
+            });
+        }
+        
+        function toggleStaffModal(show, staff = null) {
+            if (show) {
+                staffForm.reset();
+                if (staff) {
+                    document.getElementById('staff-modal-title').textContent = translations[currentLang].edit_staff_member;
+                    document.getElementById('staff-id').value = staff.id;
+                    document.getElementById('staff-uid').value = staff.id;
+                    document.getElementById('staff-uid').readOnly = true;
+                    document.getElementById('staff-name').value = staff.name || '';
+                    document.getElementById('staff-department-select').value = staff.departmentId || '';
+                } else {
+                    document.getElementById('staff-modal-title').textContent = translations[currentLang].add_staff_member;
+                    document.getElementById('staff-id').value = '';
+                    document.getElementById('staff-uid').readOnly = false;
+                }
+                staffModal.classList.remove('hidden');
+                staffModal.classList.add('flex');
+            } else {
+                staffModal.classList.add('hidden');
+                staffModal.classList.remove('flex');
+            }
+        }
+
+        async function handleSaveStaff(e) {
+            e.preventDefault();
+            const staffDocId = document.getElementById('staff-id').value;
+            const staffUid = document.getElementById('staff-uid').value;   
+            if (!staffUid) { showToast(currentLang === 'th' ? 'ต้องระบุ UID การยืนยันตัวตนผู้ใช้' : 'User Auth UID is required.', true); return; }
+            const staffData = { name: document.getElementById('staff-name').value, departmentId: document.getElementById('staff-department-select').value };
+            const docIdToUse = staffDocId || staffUid;
+            try {
+                await setDoc(doc(db, "users", docIdToUse), staffData);
+                showToast(staffDocId ? (currentLang === 'th' ? 'อัปเดตพนักงานแล้ว' : 'Staff member updated!') : (currentLang === 'th' ? 'เพิ่มพนักงานแล้ว' : 'Staff member added!'));
+                toggleStaffModal(false);
+            } catch (error) {
+                console.error("Error saving staff member:", error);
+                showToast(currentLang === 'th' ? 'ไม่สามารถบันทึกพนักงานได้' : 'Could not save staff member.', true);
+            }
+        }
+        
+        function renderSuppliersTable() {
+            suppliersTableBody.innerHTML = '';
+            const searchTerm = supplierSearchInput.value.toLowerCase();
+            let filteredSuppliers = allSuppliers.filter(s => s.name.toLowerCase().includes(searchTerm));
+
+            applySort(filteredSuppliers, currentSorts.suppliers.key, currentSorts.suppliers.dir);
+
+            const totalPages = Math.ceil(filteredSuppliers.length / itemsPerPage);
+            const startIndex = (suppliersCurrentPage - 1) * itemsPerPage;
+            const paginatedSuppliers = filteredSuppliers.slice(startIndex, startIndex + itemsPerPage);
+
+            if(paginatedSuppliers.length === 0) {
+                 suppliersTableBody.innerHTML = `<tr><td colspan="2" class="text-center py-4">${currentLang === 'th' ? 'ไม่พบซัพพลายเออร์' : 'No suppliers found.'}</td></tr>`;
+            } else {
+                paginatedSuppliers.forEach(supplier => {
+                    const row = `
+                        <tr class="border-b">
+                            <td class="table-cell font-medium whitespace-normal break-words">${supplier.name}</td>
+                            <td class="table-cell">
+                                <div class="flex items-center gap-2">
+                                    <button data-id="${supplier.id}" class="edit-supplier-btn text-blue-600 hover:underline"><span class="hidden sm:inline">${currentLang === 'th' ? 'แก้ไข' : 'Edit'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                    <button data-id="${supplier.id}" class="delete-supplier-btn text-red-600 hover:underline"><span class="hidden sm:inline">${currentLang === 'th' ? 'ลบ' : 'Delete'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    suppliersTableBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+             renderPagination('suppliers', suppliersPaginationControls, totalPages, suppliersCurrentPage, (page) => {
+                suppliersCurrentPage = page;
+                renderSuppliersTable();
+            });
+        }
+
+
+        function fetchAllSuppliers() {
+            suppliersLoading.classList.remove('hidden');
+            onSnapshot(collection(db, "suppliers"), (snapshot) => {
+                allSuppliers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                suppliersLoading.classList.add('hidden');
+                
+                supplierFilter.innerHTML = `<option value="All">${translations[currentLang].all_suppliers}</option>`;
+                allSuppliers.forEach(s => supplierFilter.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+                
+                renderSuppliersTable();
+            }, (error) => {
+                console.error("Error fetching suppliers:", error);
+                suppliersLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดซัพพลายเออร์ได้' : 'Could not load suppliers.'}</p>`;
+            });
+        }
+
+        function toggleSupplierModal(show, supplier = null) {
+             if (show) {
+                supplierForm.reset();
+                if (supplier) {
+                    document.getElementById('supplier-modal-title').textContent = 'Edit Supplier';
+                    document.getElementById('supplier-id').value = supplier.id;
+                    document.getElementById('supplier-name').value = supplier.name;
+                } else {
+                    document.getElementById('supplier-modal-title').textContent = translations[currentLang].add_new_supplier;
+                    document.getElementById('supplier-id').value = '';
+                }
+                supplierModal.classList.remove('hidden');
+                supplierModal.classList.add('flex');
+            } else {
+                supplierModal.classList.add('hidden');
+                supplierModal.classList.remove('flex');
+            }
+        }
+        
+        async function handleSaveSupplier(e) {
+            e.preventDefault();
+            const supplierId = document.getElementById('supplier-id').value;
+            const supplierData = { name: document.getElementById('supplier-name').value };
+            try {
+                if (supplierId) {
+                    await updateDoc(doc(db, "suppliers", supplierId), supplierData);
+                    showToast(currentLang === 'th' ? 'อัปเดตซัพพลายเออร์แล้ว' : 'Supplier updated!');
+                } else {
+                    await addDoc(collection(db, "suppliers"), supplierData);
+                    showToast(currentLang === 'th' ? 'เพิ่มซัพพลายเออร์แล้ว' : 'Supplier added!');
+                }
+                toggleSupplierModal(false);
+            } catch (error) {
+                console.error("Error saving supplier:", error);
+                showToast(currentLang === 'th' ? 'ไม่สามารถบันทึกซัพพลายเออร์ได้' : 'Could not save supplier.', true);
+            }
+        }
+        
+        async function handleDeleteSupplier(supplierId) {
+            if (confirm(currentLang === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบซัพพลายเออร์นี้?' : 'Are you sure you want to delete this supplier?')) {
+                try {
+                    await deleteDoc(doc(db, "suppliers", supplierId));
+                    showToast(currentLang === 'th' ? 'ลบซัพพลายเออร์แล้ว' : 'Supplier deleted.');
+                } catch (error) {
+                    console.error("Error deleting supplier:", error);
+                    showToast(currentLang === 'th' ? 'ไม่สามารถลบซัพพลายเออร์ได้' : 'Could not delete supplier.', true);
+                }
+            }
+        }
+
+        function renderDepartmentsTable() {
+            departmentsTableBody.innerHTML = '';
+            const searchTerm = departmentSearchInput.value.toLowerCase();
+            let filteredDepts = allDepartments.filter(d => (d.name_en || '').toLowerCase().includes(searchTerm) || (d.name_th || '').toLowerCase().includes(searchTerm));
+
+            applySort(filteredDepts, currentSorts.departments.key, currentSorts.departments.dir);
+            
+            const totalPages = Math.ceil(filteredDepts.length / itemsPerPage);
+            const startIndex = (deptsCurrentPage - 1) * itemsPerPage;
+            const paginatedDepts = filteredDepts.slice(startIndex, startIndex + itemsPerPage);
+
+            if(paginatedDepts.length === 0) {
+                 departmentsTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${currentLang === 'th' ? 'ไม่พบแผนก' : 'No departments found.'}</td></tr>`;
+            } else {
+                paginatedDepts.forEach(dept => {
+                    const row = `
+                        <tr class="border-b">
+                            <td class="table-cell font-medium whitespace-normal break-words">${dept.name_en || ''}</td>
+                            <td class="table-cell text-gray-600 whitespace-normal break-words">${dept.name_th || ''}</td>
+                            <td class="table-cell">
+                                <div class="flex items-center gap-2">
+                                    <button data-id="${dept.id}" class="edit-department-btn text-blue-600 hover:underline"><span class="hidden sm:inline">${currentLang === 'th' ? 'แก้ไข' : 'Edit'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                    <button data-id="${dept.id}" class="delete-department-btn text-red-600 hover:underline"><span class="hidden sm:inline">${currentLang === 'th' ? 'ลบ' : 'Delete'}</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    departmentsTableBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+             renderPagination('depts', departmentsPaginationControls, totalPages, deptsCurrentPage, (page) => {
+                deptsCurrentPage = page;
+                renderDepartmentsTable();
+            });
+        }
+        
+        function fetchAllDepartments() {
+            departmentsLoading.classList.remove('hidden');
+            onSnapshot(collection(db, "departments"), (snapshot) => {
+                allDepartments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                departmentsLoading.classList.add('hidden');
+                staffDepartmentSelect.innerHTML = `<option value="">${currentLang === 'th' ? 'เลือกแผนก' : 'Select a department'}</option>`;
+                allDepartments.forEach(dept => {
+                    staffDepartmentSelect.innerHTML += `<option value="${dept.id}">${dept[`name_${currentLang}`]}</option>`;
+                });
+                renderDepartmentsTable();
+            }, (error) => {
+                console.error("Error fetching departments: ", error);
+                departmentsLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดแผนกได้' : 'Could not load departments.'}</p>`;
+            });
+        }
+
+        function toggleDepartmentModal(show, dept = null) {
+            if (show) {
+                departmentForm.reset();
+                if (dept) {
+                    document.getElementById('department-modal-title').textContent = translations[currentLang].edit_department;
+                    document.getElementById('department-id').value = dept.id;
+                    document.getElementById('department-name_en').value = dept.name_en || '';
+                    document.getElementById('department-name_th').value = dept.name_th || '';
+                } else {
+                    document.getElementById('department-modal-title').textContent = translations[currentLang].add_new_department;
+                    document.getElementById('department-id').value = '';
+                }
+                departmentModal.classList.remove('hidden');
+                departmentModal.classList.add('flex');
+            } else {
+                departmentModal.classList.add('hidden');
+                departmentModal.classList.remove('flex');
+            }
+        }
+
+        async function handleSaveDepartment(e) {
+            e.preventDefault();
+            const deptId = document.getElementById('department-id').value;
+            const deptData = {
+                name_en: document.getElementById('department-name_en').value,
+                name_th: document.getElementById('department-name_th').value
+            };
+            try {
+                if (deptId) {
+                    await updateDoc(doc(db, "departments", deptId), deptData);
+                    showToast(currentLang === 'th' ? 'อัปเดตแผนกแล้ว' : 'Department updated!');
+                } else {
+                    await addDoc(collection(db, "departments"), deptData);
+                    showToast(currentLang === 'th' ? 'เพิ่มแผนกแล้ว' : 'Department added!');
+                }
+                toggleDepartmentModal(false);
+            } catch (error) {
+                console.error("Error saving department:", error);
+                showToast(currentLang === 'th' ? 'ไม่สามารถบันทึกแผนกได้' : 'Could not save department.', true);
+            }
+        }
+
+        async function handleDeleteDepartment(deptId) {
+            const isAssigned = allStaff.some(staff => staff.departmentId === deptId);
+            if (isAssigned) {
+                alert(currentLang === 'th' ? 'ไม่สามารถลบแผนกนี้ได้ มีการกำหนดให้กับพนักงานหนึ่งคนหรือมากกว่า โปรดกำหนดใหม่ก่อน' : 'Cannot delete this department. It is currently assigned to one or more staff members. Please reassign them first.');
+                return;
+            }
+            if (confirm(currentLang === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบแผนกนี้?' : 'Are you sure you want to delete this department?')) {
+                try {
+                    await deleteDoc(doc(db, "departments", deptId));
+                    showToast(currentLang === 'th' ? 'ลบแผนกแล้ว' : 'Department deleted.');
+                } catch (error) {
+                    console.error("Error deleting department:", error);
+                    showToast(currentLang === 'th' ? 'ไม่สามารถลบแผนกได้' : 'Could not delete department.', true);
+                }
+            }
         }
 
         function exportToCSV(data, headers, filename) {
-            const csvRows = [];
-            csvRows.push(headers.join(','));
-            for (const item of data) {
+            const csvRows = [headers.join(',')];
+            data.forEach(item => {
                 const values = headers.map(header => {
-                    let value = item[header] || '';
-                    if (typeof value === 'string' && value.includes(',')) {
-                        value = `"${value}"`;
+                    let val = '';
+                    if (header === 'department_name_en') {
+                        const dept = allDepartments.find(d => d.id === item.departmentId);
+                        val = dept ? dept.name_en : 'N/A'; // Fix: Handle case where department is not found
+                    } else {
+                        val = item[header] !== undefined ? item[header] : '';
                     }
-                    return value;
+                    const escaped = ('' + val).replace(/"/g, '""');
+                    return `"${escaped}"`;
                 });
                 csvRows.push(values.join(','));
+            });
+
+            const csvString = csvRows.join('\n');
+            const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
-            const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.setAttribute('hidden', '');
-            a.setAttribute('href', url);
-            a.setAttribute('download', filename);
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
         }
 
-        async function handleFileImport(event, collectionName, headers, transformFn = null) {
+        function handleFileImport(event, collectionName, requiredHeaders, dataMapper) {
             const file = event.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const text = e.target.result;
-                const data = parseCSV(text);
-                const warnings = [];
-                
-                appLoading.classList.remove('hidden');
 
-                for (const row of data) {
-                    let docData = transformFn ? transformFn(row, warnings) : row;
-                    if (docData) {
-                        const docId = docData.id || docData.uid || row[headers[0]];
-                        if (!docId) {
-                           warnings.push(`Skipping row with missing ID: ${JSON.stringify(row)}`);
-                           continue;
-                        }
-                        try {
-                            await setDoc(doc(db, collectionName, docId), docData, { merge: true });
-                        } catch(error) {
-                             warnings.push(`Error importing row for ID ${docId}: ${error.message}`);
-                        }
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const text = e.target.result;
+                const rows = text.split('\n').filter(row => row.trim() !== '');
+                if (rows.length < 2) {
+                    showToast('CSV file is empty or has only a header.', true);
+                    return;
+                }
+
+                const headers = rows[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+                if (missingHeaders.length > 0) {
+                    showToast(`CSV is missing required headers: ${missingHeaders.join(', ')}`, true);
+                    return;
+                }
+                
+                let itemsToUpload = [];
+                let warnings = [];
+                for (let i = 1; i < rows.length; i++) {
+                    const values = rows[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                    if (values.length !== headers.length) {
+                        warnings.push(`Skipping malformed row ${i + 1}`);
+                        continue;
+                    }
+                    let rawData = {};
+                    headers.forEach((header, index) => { rawData[header] = values[index]; });
+                    
+                    const mappedData = dataMapper(rawData, warnings);
+                    if (mappedData) {
+                        itemsToUpload.push(mappedData);
                     }
                 }
-                
-                await loadInitialData();
-                appLoading.classList.add('hidden');
-                
-                if(warnings.length > 0) {
-                    alert('Import completed with warnings:\n\n' + warnings.join('\n'));
+
+                if (warnings.length > 0) {
+                    showToast(warnings.join('; '), true);
                 }
-                showToast('CSV import completed!', 'success');
+
+                if (itemsToUpload.length > 0) {
+                    showToast(`Importing ${itemsToUpload.length} items...`);
+                    try {
+                        const batch = writeBatch(db);
+                        itemsToUpload.forEach(item => {
+                             if (collectionName === 'users') { // Special handling for users collection with UID as ID
+                                const docRef = doc(db, collectionName, item.uid);
+                                delete item.uid; // don't save uid as a field
+                                batch.set(docRef, item);
+                            } else {
+                                const newDocRef = doc(collection(db, collectionName));
+                                batch.set(newDocRef, item);
+                            }
+                        });
+                        await batch.commit();
+                        showToast('Items imported successfully!', false);
+                    } catch (error) {
+                        console.error(`Error importing to ${collectionName}:`, error);
+                        showToast('Error during import.', true);
+                    }
+                }
+                event.target.value = ''; // Reset file input
             };
-            reader.readAsText(file);
-            event.target.value = ''; // Reset input
+            reader.readAsText(file, 'UTF-8');
         }
 
-        importProductsBtn.addEventListener('click', () => productCsvInput.click());
-        exportProductsBtn.addEventListener('click', () => {
-            const dataToExport = allProducts.map(p => ({
-                ...p,
-                supplier: allSuppliers.find(s => s.id === p.supplier)?.name || ''
-            }));
-            exportToCSV(dataToExport, ["product_reference", "name_en", "name_th", "category_en", "category_th", "packaging_en", "packaging_th", "supplier", "keywords", "imageUrl", "isActive"], 'products_export.csv');
+        
+        function initialize() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app); auth = getAuth(app);
+                setLanguage(currentLang);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        const userDocRef = doc(db, "users", user.uid);
+                        getDoc(userDocRef).then(docSnap => {
+                            if (docSnap.exists()){
+                                const userData = docSnap.data();
+                                if(userDisplay && userData.name) {
+                                    userDisplay.textContent = `${translations[currentLang].logged_in_as} ${userData.name}`;
+                                }
+                                if (userData.departmentId === 'qu76BRyA9CS1XTqSay4X') {
+                                    appContainer.classList.remove('hidden');
+                                    fetchAllDepartments();
+                                    fetchAllSuppliers();
+                                    fetchAllStaff();
+                                    fetchAllProducts();
+                                    fetchPendingOrders();
+                                    fetchProcessedOrders();
+                                } else {
+                                    accessDeniedMessage.classList.remove('hidden');
+                                    setTimeout(() => { window.location.href = './index.html'; }, 3000);
+                                }
+                            } else {
+                                accessDeniedMessage.classList.remove('hidden');
+                                setTimeout(() => { window.location.href = './index.html'; }, 3000);
+                            }
+                        });
+                    } else { window.location.href = './login.html'; }
+                });
+            } catch (error) { console.error("Firebase init failed:", error); }
+        }
+        
+        langSwitcher.addEventListener('click', (e) => {
+            const lang = e.target.dataset.lang;
+            if (lang) { setLanguage(lang); }
         });
-        productCsvInput.addEventListener('change', (e) => handleFileImport(e, 'products', ['product_reference'], (data, warnings) => {
-            const supplier = allSuppliers.find(s => s.name.toLowerCase() === data.supplier.toLowerCase());
-            if (!supplier) {
-                warnings.push(`Supplier "${data.supplier}" not found for product ${data.name_en}. Skipping supplier field.`);
+        
+        menuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (e) => {
+            if (!menuButton.contains(e.target) && !mobileMenu.contains(e.target)) {
+                mobileMenu.classList.add('hidden');
             }
-            return {
-                ...data,
-                supplier: supplier ? supplier.id : '',
-                isActive: data.isActive?.toLowerCase() === 'true'
-            };
-        }));
+        });
+
+        pendingOrdersList.addEventListener('click', (e) => {
+            const cancelBtn = e.target.closest('.cancel-order-btn');
+            const editBtn = e.target.closest('.edit-order-btn');
+            if (cancelBtn) { handleCancelOrder(cancelBtn.dataset.id); }
+            if (editBtn) { handleEditOrder(editBtn.dataset.id); }
+        });
+        
+        orderHistoryTableBody.addEventListener('click', (e) => {
+            const row = e.target.closest('.order-history-row');
+            if(row) {
+                const detailsRow = row.nextElementSibling;
+                detailsRow.classList.toggle('hidden');
+            }
+        });
+        
+        supplierFilter.addEventListener('change', () => {
+            productsCurrentPage = 1;
+            renderProductsTable();
+        });
+
+        function setupSearch(inputId, clearId, renderFunc) {
+            const input = document.getElementById(inputId);
+            const clear = document.getElementById(clearId);
+            input.addEventListener('input', () => {
+                clear.classList.toggle('hidden', !input.value);
+                renderFunc();
+            });
+            clear.addEventListener('click', () => {
+                input.value = '';
+                clear.classList.add('hidden');
+                renderFunc();
+            });
+        }
+        setupSearch('product-search', 'product-clear-search', renderProductsTable);
+        setupSearch('staff-search', 'staff-clear-search', renderStaffTable);
+        setupSearch('supplier-search', 'supplier-clear-search', renderSuppliersTable);
+        setupSearch('department-search', 'department-clear-search', renderDepartmentsTable);
+
+        document.querySelector('#products-table-body').previousElementSibling.addEventListener('click', (e) => {
+            const th = e.target.closest('.sortable');
+            if(th) handleSort('products', th.dataset.sort);
+        });
+        document.querySelector('#staff-table-body').previousElementSibling.addEventListener('click', (e) => {
+            const th = e.target.closest('.sortable');
+            if(th) handleSort('staff', th.dataset.sort);
+        });
+         document.querySelector('#suppliers-table-body').previousElementSibling.addEventListener('click', (e) => {
+            const th = e.target.closest('.sortable');
+            if(th) handleSort('suppliers', th.dataset.sort);
+        });
+        document.querySelector('#departments-table-body').previousElementSibling.addEventListener('click', (e) => {
+            const th = e.target.closest('.sortable');
+            if(th) handleSort('departments', th.dataset.sort);
+        });
+
+        const logout = () => {
+            signOut(auth);
+            localStorage.removeItem('appLanguage');
+        }
+        logoutBtn.addEventListener('click', logout);
+        logoutBtnMobile.addEventListener('click', logout);
+        
+        generateListBtn.addEventListener('click', generateSupplierList);
+        supplierListContainer.addEventListener('click', (e) => { if (e.target.id === 'mark-processed-btn') markOrdersAsProcessed(); });
+        addProductBtn.addEventListener('click', () => toggleProductModal(true));
+        closeModalBtn.addEventListener('click', () => toggleProductModal(false));
+        cancelProductFormBtn.addEventListener('click', () => toggleProductModal(false));
+        productForm.addEventListener('submit', handleSaveProduct);
+        productsTableBody.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.edit-product-btn');
+            const deleteBtn = e.target.closest('.delete-product-btn');
+            if (editBtn) { const product = allProducts.find(p => p.id === editBtn.dataset.id); toggleProductModal(true, product); }
+            if (deleteBtn) { handleDeleteProduct(deleteBtn.dataset.id); }
+        });
+        addStaffBtn.addEventListener('click', () => toggleStaffModal(true));
+        closeStaffModalBtn.addEventListener('click', () => toggleStaffModal(false));
+        cancelStaffFormBtn.addEventListener('click', () => toggleStaffModal(false));
+        staffForm.addEventListener('submit', handleSaveStaff);
+        staffTableBody.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.edit-staff-btn');
+            const deleteBtn = e.target.closest('.delete-staff-btn');
+            if (editBtn) { const staff = allStaff.find(s => s.id === editBtn.dataset.id); toggleStaffModal(true, staff); }
+            if (deleteBtn) { handleDeleteStaff(deleteBtn.dataset.id); }
+        });
+        addDepartmentBtn.addEventListener('click', () => toggleDepartmentModal(true));
+        closeDepartmentModalBtn.addEventListener('click', () => toggleDepartmentModal(false));
+        cancelDepartmentFormBtn.addEventListener('click', () => toggleDepartmentModal(false));
+        departmentForm.addEventListener('submit', handleSaveDepartment);
+        departmentsTableBody.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.edit-department-btn');
+            const deleteBtn = e.target.closest('.delete-department-btn');
+            if (editBtn) { const dept = allDepartments.find(d => d.id === editBtn.dataset.id); toggleDepartmentModal(true, dept); }
+            if (deleteBtn) { handleDeleteDepartment(deleteBtn.dataset.id); }
+        });
+        addSupplierBtn.addEventListener('click', () => toggleSupplierModal(true));
+        closeSupplierModalBtn.addEventListener('click', () => toggleSupplierModal(false));
+        cancelSupplierFormBtn.addEventListener('click', () => toggleSupplierModal(false));
+        supplierForm.addEventListener('submit', handleSaveSupplier);
+        suppliersTableBody.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.edit-supplier-btn');
+            const deleteBtn = e.target.closest('.delete-supplier-btn');
+            if (editBtn) { const supplier = allSuppliers.find(s => s.id === editBtn.dataset.id); toggleSupplierModal(true, supplier); }
+            if (deleteBtn) { handleDeleteSupplier(deleteBtn.dataset.id); }
+        });
+        
+        closeEditOrderModalBtn.addEventListener('click', () => { editOrderModal.classList.add('hidden'); editOrderModal.classList.remove('flex'); });
+        cancelEditOrderBtn.addEventListener('click', () => { editOrderModal.classList.add('hidden'); editOrderModal.classList.remove('flex'); });
+        updateOrderBtn.addEventListener('click', handleUpdateOrder);
+
+        editOrderItemsContainer.addEventListener('click', (e) => {
+            const button = e.target.closest('.quantity-btn, .remove-item');
+            if (!button) return;
+            const productId = button.dataset.id;
+            const itemInOrder = currentEditingOrder.items.find(item => item.productId === productId);
+            if (button.classList.contains('increase-quantity')) { itemInOrder.quantity++; } 
+            else if (button.classList.contains('decrease-quantity')) { if (itemInOrder.quantity > 1) { itemInOrder.quantity--; } else { currentEditingOrder.items = currentEditingOrder.items.filter(item => item.productId !== productId); } } 
+            else if (button.classList.contains('remove-item')) { currentEditingOrder.items = currentEditingOrder.items.filter(item => item.productId !== productId); }
+            renderEditOrderModal();
+        });
+
+        // Event Listeners for Import/Export
+        importCsvBtn.addEventListener('click', () => csvFileInput.click());
+        exportCsvBtn.addEventListener('click', () => exportToCSV(allProducts, ["name_en", "name_th", "product_reference", "supplier", "category_en", "category_th", "packaging_en", "packaging_th", "keywords", "imageUrl", "isActive"], 'products_export.csv'));
+        csvFileInput.addEventListener('change', (e) => handleFileImport(e, 'products', ['name_en'], (data) => ({...data, isActive: data.isActive ? data.isActive.toLowerCase() === 'true' : false }) ));
         
         importStaffBtn.addEventListener('click', () => staffCsvInput.click());
         exportStaffBtn.addEventListener('click', () => exportToCSV(allStaff, ["id", "name", "department_name_en"], 'staff_export.csv'));
@@ -801,6 +1683,8 @@
         exportDepartmentBtn.addEventListener('click', () => exportToCSV(allDepartments, ["name_en", "name_th"], 'departments_export.csv'));
         departmentCsvInput.addEventListener('change', (e) => handleFileImport(e, 'departments', ['name_en'], (data) => data));
 
+
+        initialize();
     </script>
 </body>
 </html>
