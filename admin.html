@@ -216,14 +216,14 @@
         import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, orderBy, where, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // --- Firebase Config ---
-        // === MODIFICATION START: Added robust error handling for Firebase config ===
+        // === MODIFICATION START: Using the correct environment variable for Firebase config ===
         let app, auth, db;
         try {
-            const firebaseConfigString = atob(''); // This is a placeholder
-            if (!firebaseConfigString) {
-                throw new Error("Firebase config is empty. The application cannot start.");
+            // Check if the __firebase_config variable is provided by the environment
+            if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+                throw new Error("Firebase config is not available in the environment.");
             }
-            const firebaseConfig = JSON.parse(firebaseConfigString);
+            const firebaseConfig = JSON.parse(__firebase_config);
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
@@ -233,12 +233,13 @@
             appLoading.innerHTML = `<div class="text-center p-4">
                 <h1 class="text-2xl font-bold text-red-600 mb-2">Application Error</h1>
                 <p class="text-gray-700">Could not initialize Firebase. Please check the console for details.</p>
-                <p class="text-gray-500 text-sm mt-2">The Firebase configuration might be missing.</p>
+                <p class="text-gray-500 text-sm mt-2">The Firebase configuration might be missing or invalid.</p>
             </div>`;
-            // Stop further script execution
-            throw new Error("Halting script execution due to Firebase initialization failure.");
+            // Stop further script execution by re-throwing the error
+            throw error;
         }
         // === MODIFICATION END ===
+
 
         // --- Global State ---
         let allProducts = [];
@@ -382,8 +383,8 @@
         function renderProducts(filter = '') {
             const filteredProducts = allProducts.filter(p => 
                 p.name_en.toLowerCase().includes(filter.toLowerCase()) ||
-                p.name_th?.toLowerCase().includes(filter.toLowerCase()) ||
-                p.category_en?.toLowerCase().includes(filter.toLowerCase())
+                (p.name_th && p.name_th.toLowerCase().includes(filter.toLowerCase())) ||
+                (p.category_en && p.category_en.toLowerCase().includes(filter.toLowerCase()))
             );
 
             productsTableBody.innerHTML = filteredProducts.map(product => `
