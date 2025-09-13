@@ -139,7 +139,6 @@
                             <label for="product-name-th" class="block text-sm font-medium text-gray-700">Name (TH)</label>
                             <input type="text" id="product-name-th" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                         </div>
-                         <!-- === MODIFICATION START === -->
                         <div>
                             <label for="product-category-en" class="block text-sm font-medium text-gray-700">Category (EN)</label>
                             <input type="text" id="product-category-en" list="category-list-en" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
@@ -150,7 +149,6 @@
                             <input type="text" id="product-category-th" list="category-list-th" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             <datalist id="category-list-th"></datalist>
                         </div>
-                        <!-- === MODIFICATION END === -->
                         <div>
                             <label for="product-packaging-en" class="block text-sm font-medium text-gray-700">Packaging (EN)</label>
                             <input type="text" id="product-packaging-en" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
@@ -218,17 +216,36 @@
         import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, orderBy, where, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // --- Firebase Config ---
-        const firebaseConfig = JSON.parse(atob(''));
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // === MODIFICATION START: Added robust error handling for Firebase config ===
+        let app, auth, db;
+        try {
+            const firebaseConfigString = atob(''); // This is a placeholder
+            if (!firebaseConfigString) {
+                throw new Error("Firebase config is empty. The application cannot start.");
+            }
+            const firebaseConfig = JSON.parse(firebaseConfigString);
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (error) {
+            console.error("FATAL: Could not initialize Firebase.", error);
+            const appLoading = document.getElementById('app-loading');
+            appLoading.innerHTML = `<div class="text-center p-4">
+                <h1 class="text-2xl font-bold text-red-600 mb-2">Application Error</h1>
+                <p class="text-gray-700">Could not initialize Firebase. Please check the console for details.</p>
+                <p class="text-gray-500 text-sm mt-2">The Firebase configuration might be missing.</p>
+            </div>`;
+            // Stop further script execution
+            throw new Error("Halting script execution due to Firebase initialization failure.");
+        }
+        // === MODIFICATION END ===
 
         // --- Global State ---
         let allProducts = [];
         let allSuppliers = [];
         let allDepartments = [];
         let allStaff = [];
-        let allCategories = []; // === NEW: To store unique categories
+        let allCategories = [];
         let currentUser = null;
 
         // --- UI Elements ---
@@ -308,12 +325,11 @@
                 fetchSuppliers(),
                 fetchDepartments(),
                 fetchStaff(),
-                fetchProducts() // This now also fetches categories
+                fetchProducts()
             ]);
             appLoading.classList.add('hidden');
             appContent.classList.remove('hidden');
             
-            // Set initial tab
             switchTab('products');
         }
 
@@ -324,10 +340,9 @@
             const productSnapshot = await getDocs(q);
             allProducts = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderProducts();
-            await fetchCategories(); // Fetch categories after products are loaded
+            await fetchCategories();
         }
 
-        // === NEW FUNCTION: Fetch and populate unique categories ===
         async function fetchCategories() {
             const categories = new Map();
             allProducts.forEach(product => {
@@ -411,7 +426,6 @@
             renderGenericList('staff-list', staffWithDept, { type: 'staff', fields: [{key: 'name', primary: true}, {key: 'department_name_en', primary: false}] });
         }
         
-        // === NEW FUNCTION: Populate Datalists for category inputs ===
         function populateCategoryDatalists() {
             categoryEnDatalist.innerHTML = allCategories.map(cat => `<option value="${cat.name_en}"></option>`).join('');
             categoryThDatalist.innerHTML = allCategories.map(cat => `<option value="${cat.name_th}"></option>`).join('');
@@ -468,7 +482,6 @@
             }
         });
 
-        // === NEW: Event listeners to sync category inputs ===
         categoryEnInput.addEventListener('input', (e) => {
             const selectedEn = e.target.value;
             const matchedCategory = allCategories.find(cat => cat.name_en.toLowerCase() === selectedEn.toLowerCase());
@@ -560,7 +573,7 @@
         
         function getStoreForType(type) {
             if (type === 'supplier') return allSuppliers;
-            if (type === 'department') return getDepartments;
+            if (type === 'department') return allDepartments;
             if (type === 'staff') return allStaff;
             return [];
         }
@@ -790,3 +803,4 @@
     </script>
 </body>
 </html>
+
