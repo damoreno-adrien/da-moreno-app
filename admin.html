@@ -362,12 +362,12 @@
                         <div><label class="block font-medium" data-key="supplier">Supplier</label><select id="product-supplier-select" class="w-full p-2 border rounded"></select></div>
                         <div>
                             <label class="block font-medium" data-key="category_en">Category (EN)</label>
-                            <input type="text" id="category_en" list="category-en-list" class="w-full p-2 border rounded">
+                            <select id="category-en" class="border p-2 rounded w-full"></select>
                             <datalist id="category-en-list"></datalist>
                         </div>
                         <div>
                             <label class="block font-medium" data-key="category_th">Category (TH)</label>
-                            <input type="text" id="category_th" list="category-th-list" class="w-full p-2 border rounded">
+                            <select id="category-th" class="border p-2 rounded w-full"></select>
                             <datalist id="category-th-list"></datalist>
                         </div>
                         <div><label class="block font-medium" data-key="packaging_en">Packaging (EN)</label><input type="text" id="packaging_en" class="w-full p-2 border rounded"></div>
@@ -1749,40 +1749,45 @@
     
     // --- Category Dropdown Logic ---
     async function loadCategoriesDropdown() {
-      const catsSnap = await getDocs(collection(db, "categories"));
-      const categories = [];
-      catsSnap.forEach(docSnap => {
-        categories.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      // populate dropdowns if they exist
-      const enSelect = document.getElementById("category-en");
-      const thSelect = document.getElementById("category-th");
-      if (enSelect && thSelect) {
-        enSelect.innerHTML = "";
-        thSelect.innerHTML = "";
-        categories.forEach(cat => {
-          const enOpt = document.createElement("option");
-          enOpt.value = cat.en;
-          enOpt.textContent = cat.en;
-          enOpt.dataset.th = cat.th;
-          enSelect.appendChild(enOpt);
-          const thOpt = document.createElement("option");
-          thOpt.value = cat.th;
-          thOpt.textContent = cat.th;
-          thOpt.dataset.en = cat.en;
-          thSelect.appendChild(thOpt);
-        });
-        enSelect.addEventListener("change", () => {
-          const th = enSelect.options[enSelect.selectedIndex].dataset.th;
-          thSelect.value = th;
-        });
-        thSelect.addEventListener("change", () => {
-          const en = thSelect.options[thSelect.selectedIndex].dataset.en;
-          enSelect.value = en;
-        });
-      }
-    }
-    loadCategoriesDropdown();
+  const catsSnap = await getDocs(collection(db, "categories"));
+  const categories = [];
+  catsSnap.forEach(docSnap => {
+    categories.push({ id: docSnap.id, ...docSnap.data() });
+  });
+
+  const enSelect = document.getElementById("category-en");
+  const thSelect = document.getElementById("category-th");
+
+  if (enSelect && thSelect) {
+    enSelect.innerHTML = "";
+    thSelect.innerHTML = "";
+    categories.forEach(cat => {
+      const enOpt = document.createElement("option");
+      enOpt.value = cat.en;
+      enOpt.textContent = cat.en;
+      enOpt.dataset.th = cat.th;
+      enSelect.appendChild(enOpt);
+
+      const thOpt = document.createElement("option");
+      thOpt.value = cat.th;
+      thOpt.textContent = cat.th;
+      thOpt.dataset.en = cat.en;
+      thSelect.appendChild(thOpt);
+    });
+
+    enSelect.addEventListener("change", () => {
+      const th = enSelect.options[enSelect.selectedIndex].dataset.th;
+      thSelect.value = th;
+    });
+
+    thSelect.addEventListener("change", () => {
+      const en = thSelect.options[thSelect.selectedIndex].dataset.en;
+      enSelect.value = en;
+    });
+  }
+}
+loadCategoriesDropdown();
+
     
 </script>
 </body>
