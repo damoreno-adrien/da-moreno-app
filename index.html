@@ -555,19 +555,5 @@
         logoutBtnMobile.addEventListener('click', logout);
 
     </script>
-
-<script type="module">
-  function attachCartEvents(container) {
-    container.querySelectorAll(".cart-item").forEach(div => {
-      const input = div.querySelector(".qty-input");
-      const inc = div.querySelector(".inc");
-      const dec = div.querySelector(".dec");
-      inc.addEventListener("click", () => { input.value = parseInt(input.value||1) + 1; });
-      dec.addEventListener("click", () => { input.value = Math.max(1, parseInt(input.value||1) - 1); });
-      input.addEventListener("change", () => { if (parseInt(input.value) < 1) input.value = 1; });
-    });
-  }
-</script>
 </body>
-
 </html>
