@@ -4,7 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Da Moreno Orders</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+    // --- Category Dropdown Logic ---
+    async function loadCategoriesDropdown() {
+      const catsSnap = await getDocs(collection(db, "categories"));
+      const categories = [];
+      catsSnap.forEach(docSnap => {
+        categories.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      // populate dropdowns if they exist
+      const enSelect = document.getElementById("category-en");
+      const thSelect = document.getElementById("category-th");
+      if (enSelect && thSelect) {
+        enSelect.innerHTML = "";
+        thSelect.innerHTML = "";
+        categories.forEach(cat => {
+          const enOpt = document.createElement("option");
+          enOpt.value = cat.en;
+          enOpt.textContent = cat.en;
+          enOpt.dataset.th = cat.th;
+          enSelect.appendChild(enOpt);
+          const thOpt = document.createElement("option");
+          thOpt.value = cat.th;
+          thOpt.textContent = cat.th;
+          thOpt.dataset.en = cat.en;
+          thSelect.appendChild(thOpt);
+        });
+        enSelect.addEventListener("change", () => {
+          const th = enSelect.options[enSelect.selectedIndex].dataset.th;
+          thSelect.value = th;
+        });
+        thSelect.addEventListener("change", () => {
+          const en = thSelect.options[thSelect.selectedIndex].dataset.en;
+          enSelect.value = en;
+        });
+      }
+    }
+    loadCategoriesDropdown();
+    
+</script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" href="https://fav.farm/🇮🇹" />
     <style>
@@ -322,8 +360,16 @@
                         <div><label class="block font-medium" data-key="name_th">Name (TH)</label><input type="text" id="name_th" class="w-full p-2 border rounded"></div>
                         <div><label class="block font-medium" data-key="product_reference">Product Reference</label><input type="text" id="product_reference" class="w-full p-2 border rounded"></div>
                         <div><label class="block font-medium" data-key="supplier">Supplier</label><select id="product-supplier-select" class="w-full p-2 border rounded"></select></div>
-                        <div><label class="block font-medium" data-key="category_en">Category (EN)</label><input type="text" id="category_en" class="w-full p-2 border rounded"></div>
-                        <div><label class="block font-medium" data-key="category_th">Category (TH)</label><input type="text" id="category_th" class="w-full p-2 border rounded"></div>
+                        <div>
+                            <label class="block font-medium" data-key="category_en">Category (EN)</label>
+                            <input type="text" id="category_en" list="category-en-list" class="w-full p-2 border rounded">
+                            <datalist id="category-en-list"></datalist>
+                        </div>
+                        <div>
+                            <label class="block font-medium" data-key="category_th">Category (TH)</label>
+                            <input type="text" id="category_th" list="category-th-list" class="w-full p-2 border rounded">
+                            <datalist id="category-th-list"></datalist>
+                        </div>
                         <div><label class="block font-medium" data-key="packaging_en">Packaging (EN)</label><input type="text" id="packaging_en" class="w-full p-2 border rounded"></div>
                         <div><label class="block font-medium" data-key="packaging_th">Packaging (TH)</label><input type="text" id="packaging_th" class="w-full p-2 border rounded"></div>
                     </div>
@@ -1023,10 +1069,24 @@
             });
         }
         
+        function populateCategorySuggestions() {
+            const categoryEnList = document.getElementById('category-en-list');
+            const categoryThList = document.getElementById('category-th-list');
+
+            if (!categoryEnList || !categoryThList) return;
+
+            const uniqueCategoriesEn = [...new Set(allProducts.map(p => p.category_en).filter(Boolean))];
+            const uniqueCategoriesTh = [...new Set(allProducts.map(p => p.category_th).filter(Boolean))];
+
+            categoryEnList.innerHTML = uniqueCategoriesEn.map(cat => `<option value="${cat}"></option>`).join('');
+            categoryThList.innerHTML = uniqueCategoriesTh.map(cat => `<option value="${cat}"></option>`).join('');
+        }
+
         function fetchAllProducts() {
             productsLoading.classList.remove('hidden');
             onSnapshot(collection(db, "products"), (snapshot) => {
                 allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                populateCategorySuggestions();
                 productsLoading.classList.add('hidden'); renderProductsTable();
             }, (error) => {
                 console.error("Error fetching products: ", error);
@@ -1036,6 +1096,7 @@
         
         function toggleProductModal(show, product = null) {
             if (show) {
+                populateCategorySuggestions();
                 productForm.reset();
                 productSupplierSelect.innerHTML = `<option value="">${currentLang === 'th' ? 'เลือกซัพพลายเออร์' : 'Select a supplier'}</option>`;
                 allSuppliers.forEach(s => productSupplierSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
@@ -1685,7 +1746,44 @@
 
 
         initialize();
-    </script>
+    
+    // --- Category Dropdown Logic ---
+    async function loadCategoriesDropdown() {
+      const catsSnap = await getDocs(collection(db, "categories"));
+      const categories = [];
+      catsSnap.forEach(docSnap => {
+        categories.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      // populate dropdowns if they exist
+      const enSelect = document.getElementById("category-en");
+      const thSelect = document.getElementById("category-th");
+      if (enSelect && thSelect) {
+        enSelect.innerHTML = "";
+        thSelect.innerHTML = "";
+        categories.forEach(cat => {
+          const enOpt = document.createElement("option");
+          enOpt.value = cat.en;
+          enOpt.textContent = cat.en;
+          enOpt.dataset.th = cat.th;
+          enSelect.appendChild(enOpt);
+          const thOpt = document.createElement("option");
+          thOpt.value = cat.th;
+          thOpt.textContent = cat.th;
+          thOpt.dataset.en = cat.en;
+          thSelect.appendChild(thOpt);
+        });
+        enSelect.addEventListener("change", () => {
+          const th = enSelect.options[enSelect.selectedIndex].dataset.th;
+          thSelect.value = th;
+        });
+        thSelect.addEventListener("change", () => {
+          const en = thSelect.options[thSelect.selectedIndex].dataset.en;
+          enSelect.value = en;
+        });
+      }
+    }
+    loadCategoriesDropdown();
+    
+</script>
 </body>
 </html>
-
