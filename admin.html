@@ -727,12 +727,13 @@
                  editOrderItemsContainer.innerHTML = `<p class="text-gray-500 text-center">${currentLang === 'th' ? 'คำสั่งซื้อนี้ว่างเปล่า' : 'This order is empty.'}</p>`;
             } else {
                  currentEditingOrder.items.forEach(item => {
-                    const itemHtml = `<div class="flex items-center justify-between py-3 border-b last:border-b-0"><div><p class="font-semibold">${item[`productName_${currentLang}`] || item.productName}</p><p class="text-sm text-gray-500">${currentLang === 'th' ? 'ต่อ' : 'Per'} ${item[`packaging_${currentLang}`] || item.packaging}</p></div><div class="flex items-center gap-3"><button data-id="${item.productId}" class="quantity-btn decrease-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">-</button><span class="font-medium w-8 text-center">${item.quantity}</span><button data-id="${item.productId}" class="quantity-btn increase-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">+</button><button data-id="${item.productId}" class="remove-item text-red-500 hover:text-red-700 ml-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div></div>`;
+                    // This is the modified line
+                    const itemHtml = `<div class="flex items-center justify-between py-3 border-b last:border-b-0"><div><p class="font-semibold">${item[`productName_${currentLang}`] || item.productName}</p><p class="text-sm text-gray-500">${currentLang === 'th' ? 'ต่อ' : 'Per'} ${item[`packaging_${currentLang}`] || item.packaging}</p></div><div class="flex items-center gap-3"><button data-id="${item.productId}" class="quantity-btn decrease-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">-</button><input type="number" data-id="${item.productId}" class="quantity-input shadow-sm border rounded w-16 text-center py-1" value="${item.quantity}" min="0"><button data-id="${item.productId}" class="quantity-btn increase-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">+</button><button data-id="${item.productId}" class="remove-item text-red-500 hover:text-red-700 ml-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div></div>`;
                     editOrderItemsContainer.insertAdjacentHTML('beforeend', itemHtml);
                 });
             }
         }
-        
+
         async function handleUpdateOrder() {
             if (!currentEditingOrder.id) return;
             const orderRef = doc(db, "orders", currentEditingOrder.id);
@@ -1682,6 +1683,22 @@
             renderEditOrderModal();
         });
 
+        editOrderItemsContainer.addEventListener('change', (e) => {
+            if (e.target.classList.contains('quantity-input')) {
+                const productId = e.target.dataset.id;
+                let newQuantity = parseInt(e.target.value, 10);
+                const itemInOrder = currentEditingOrder.items.find(item => item.productId === productId);
+                if (!itemInOrder) return;
+
+                if (isNaN(newQuantity) || newQuantity <= 0) {
+                    currentEditingOrder.items = currentEditingOrder.items.filter(item => item.productId !== productId);
+                } else {
+                    itemInOrder.quantity = newQuantity;
+                }
+                renderEditOrderModal(); // Re-render this modal
+            }
+        });
+        
         // Event Listeners for Import/Export
         importCsvBtn.addEventListener('click', () => csvFileInput.click());
         exportCsvBtn.addEventListener('click', () => exportToCSV(allProducts, ["name_en", "name_th", "product_reference", "supplier", "category_en", "category_th", "packaging_en", "packaging_th", "keywords", "imageUrl", "isActive"], 'products_export.csv'));
