@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Da Moreno Supply Orders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://fav.farm/🇮🇹" />
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .lang-btn.active { background-color: #2563eb; color: white; }
+        .lang-btn:not(.active) { background-color: #e5e7eb; color: #374151; }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen p-4">
+
+    <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg relative">
+        <div class="absolute top-4 right-4">
+            <div id="lang-switcher" class="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-lg p-1">
+                <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
+                <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
+            </div>
+        </div>
+
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2" data-key="main_title">Da Moreno At Town</h1>
+        <p class="text-center text-gray-500 mb-8" data-key="main_subtitle">Supply Order System</p>
+        
+        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+            <strong class="font-bold" data-key="error_title">Error:</strong>
+            <span class="block sm:inline" id="error-text"></span>
+        </div>
+
+        <form id="login-form">
+            <div class="mb-4">
+                <label for="email" class="block text-gray-700 text-sm font-bold mb-2" data-key="email_label">Email Address</label>
+                <input type="email" id="email" name="email" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-gray-700 text-sm font-bold mb-2" data-key="password_label">Password</label>
+                <input type="password" id="password" name="password" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+            <div class="flex items-center justify-between">
+                <button type="submit" id="login-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline flex items-center justify-center gap-2">
+                    <span id="login-text" data-key="sign_in">Sign In</span>
+                    <svg id="login-spinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </button>
+            </div>
+        </form>
+         <div class="text-center mt-4">
+            <a href="#" id="forgot-password-link" class="text-sm text-blue-600 hover:underline" data-key="forgot_password">Forgot Password?</a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIqmK_P2JWz3Vr5-u_2b6s6hhyWO9c-sg",
+            authDomain: "da-moreno-orders-app.firebaseapp.com",
+            projectId: "da-moreno-orders-app",
+            storageBucket: "da-moreno-orders-app.appspot.com",
+            messagingSenderId: "545175404745",
+            appId: "1:545175404745:web:4dc2df2c7d3f7b040d18",
+            measurementId: "G-D7K1PT81Q4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const loginForm = document.getElementById('login-form');
+        const loginButton = document.getElementById('login-button');
+        const loginText = document.getElementById('login-text');
+        const loginSpinner = document.getElementById('login-spinner');
+        const errorMessageDiv = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const langSwitcher = document.getElementById('lang-switcher');
+        let currentLang = localStorage.getItem('appLanguage') || 'en';
+
+        const translations = {
+            en: {
+                main_title: "Da Moreno At Town",
+                main_subtitle: "Supply Order System",
+                error_title: "Error:",
+                email_label: "Email Address",
+                password_label: "Password",
+                sign_in: "Sign In",
+                forgot_password: "Forgot Password?",
+                invalid_credentials: "Invalid email or password. Please try again.",
+                reset_prompt: "Please enter your email address to receive a password reset link.",
+                reset_success: "Password reset email sent! Please check your inbox.",
+                reset_error: "Could not send password reset email. Please check the address and try again."
+            },
+            th: {
+                main_title: "ร้านอาหารดาโมเรโน่",
+                main_subtitle: "ระบบสั่งซื้อวัตถุดิบ",
+                error_title: "ข้อผิดพลาด:",
+                email_label: "ที่อยู่อีเมล",
+                password_label: "รหัสผ่าน",
+                sign_in: "เข้าสู่ระบบ",
+                forgot_password: "ลืมรหัสผ่าน?",
+                invalid_credentials: "อีเมลหรือรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง",
+                reset_prompt: "โปรดป้อนที่อยู่อีเมลของคุณเพื่อรับลิงก์รีเซ็ตรหัสผ่าน",
+                reset_success: "ส่งอีเมลรีเซ็ตรหัสผ่านแล้ว! โปรดตรวจสอบกล่องจดหมายของคุณ",
+                reset_error: "ไม่สามารถส่งอีเมลรีเซ็ตรหัสผ่านได้ โปรดตรวจสอบที่อยู่และลองอีกครั้ง"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('appLanguage', lang);
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.dataset.key;
+                if (translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.dataset.lang === lang) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) { 
+                window.location.href = './my-orders.html'; 
+            }
+        });
+        
+        langSwitcher.addEventListener('click', (e) => {
+            const lang = e.target.dataset.lang;
+            if (lang) { setLanguage(lang); }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loginButton.disabled = true;
+            loginText.classList.add('hidden');
+            loginSpinner.classList.remove('hidden');
+            errorMessageDiv.classList.add('hidden');
+
+            const email = loginForm.email.value;
+            const password = loginForm.password.value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                console.error("Login Error:", error.code, error.message);
+                errorText.textContent = translations[currentLang].invalid_credentials;
+                errorMessageDiv.classList.remove('hidden');
+            } finally {
+                loginButton.disabled = false;
+                loginText.classList.remove('hidden');
+                loginSpinner.classList.add('hidden');
+            }
+        });
+        
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const email = prompt(translations[currentLang].reset_prompt);
+            if(email) {
+                sendPasswordResetEmail(auth, email)
+                    .then(() => {
+                        alert(translations[currentLang].reset_success);
+                    })
+                    .catch((error) => {
+                        console.error("Password Reset Error:", error);
+                        alert(translations[currentLang].reset_error);
+                    });
+            }
+        });
+
+        setLanguage(currentLang);
+    </script>
+
+</body>
+</html>
+

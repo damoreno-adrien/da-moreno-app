@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - Da Moreno</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://fav.farm/🇮🇹" />
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        #toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 50; }
+        .toast { transform: translateX(120%); transition: transform 0.3s ease-in-out; }
+        .toast.show { transform: translateX(0); }
+        .lang-btn.active { background-color: #2563eb; color: white; }
+        .lang-btn:not(.active) { background-color: #e5e7eb; color: #374151; }
+        .nav-link.active { color: #2563eb; border-bottom-color: #2563eb; }
+        .details-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    
+    <div id="toast-container"></div>
+
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 hidden">
+        
+        <header class="mb-8">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+                <div>
+                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-800" data-key="main_title">Da Moreno At Town</h1>
+                    <p class="text-lg text-gray-500 mt-1" data-key="main_subtitle">Supply Order System</p>
+                </div>
+                <div class="w-full sm:w-auto flex flex-col sm:flex-row items-end sm:items-center gap-4">
+                    <p id="user-display" class="text-sm text-gray-600 w-full sm:w-auto text-right sm:text-left"></p>
+                    <div class="w-full sm:w-auto justify-between flex items-center gap-2">
+                        <div id="lang-switcher" class="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-lg p-1">
+                            <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
+                            <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
+                        </div>
+                        <div class="relative sm:hidden">
+                            <button id="menu-button" class="p-2 rounded-md hover:bg-gray-200">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                            </button>
+                            <div id="mobile-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                                <a href="./index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="create_order">Create Order</a>
+                                <a href="./admin.html" id="admin-link-mobile" class="hidden block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="admin_dashboard">Admin</a>
+                                <button id="logout-btn-mobile" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="logout">Logout</button>
+                            </div>
+                        </div>
+                        <div class="hidden sm:flex items-center gap-2">
+                            <a href="./admin.html" id="admin-link" class="hidden flex-1 sm:flex-none justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700" data-key="admin_dashboard">Admin</a>
+                            <button id="logout-btn" class="flex-1 sm:flex-none justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" data-key="logout">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <nav class="mt-6 border-b hidden sm:block">
+                <div class="flex items-center gap-6 text-gray-500">
+                    <a href="./my-orders.html" class="nav-link active py-3 border-b-2 font-semibold" data-key="my_orders">My Orders</a>
+                    <a href="./index.html" class="nav-link py-3 border-b-2 border-transparent hover:text-blue-600" data-key="create_order">Create Order</a>
+                </div>
+            </nav>
+        </header>
+
+        <main>
+            <div class="mb-6 flex items-center gap-2">
+                <label for="status-filter" class="font-medium" data-key="filter_by_status">Filter by status:</label>
+                <select id="status-filter" class="p-2 border rounded-lg">
+                    <option value="All" data-key="all">All</option>
+                    <option value="Pending" data-key="pending">Pending</option>
+                    <option value="Processed" data-key="processed">Processed</option>
+                    <option value="Cancelled" data-key="cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div id="my-orders-list" class="space-y-4"></div>
+            <div id="orders-loading" class="text-center py-10">
+                <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <p class="mt-2 text-gray-500" data-key="loading_my_orders">Loading my orders...</p>
+            </div>
+             <div id="pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
+        </main>
+    </div>
+
+     <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIqmK_P2JWz3Vr5-u_2b6s6hhyWO9c-sg",
+            authDomain: "da-moreno-orders-app.firebaseapp.com",
+            projectId: "da-moreno-orders-app",
+            storageBucket: "da-moreno-orders-app.appspot.com",
+            messagingSenderId: "545175404745",
+            appId: "1:545175404745:web:4dc2df2c7d3f7b040d18",
+            measurementId: "G-D7K1PT81Q4"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const appContainer = document.getElementById('app');
+        const userDisplay = document.getElementById('user-display');
+        const logoutBtn = document.getElementById('logout-btn');
+        const logoutBtnMobile = document.getElementById('logout-btn-mobile');
+        const adminLink = document.getElementById('admin-link');
+        const adminLinkMobile = document.getElementById('admin-link-mobile');
+        const myOrdersList = document.getElementById('my-orders-list');
+        const ordersLoading = document.getElementById('orders-loading');
+        const paginationControls = document.getElementById('pagination-controls');
+        const statusFilter = document.getElementById('status-filter');
+        const langSwitcher = document.getElementById('lang-switcher');
+        const menuButton = document.getElementById('menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        let currentUser;
+        let allMyOrders = [];
+        let currentPage = 1;
+        const ordersPerPage = 10;
+        let currentLang = localStorage.getItem('appLanguage') || 'en';
+
+        const translations = {
+             en: {
+                main_title: "Da Moreno At Town",
+                main_subtitle: "Supply Order System",
+                admin_dashboard: "Admin",
+                logout: "Logout",
+                my_orders: "My Orders",
+                create_order: "Create Order",
+                filter_by_status: "Filter by status:",
+                all: "All",
+                pending: "Pending",
+                processed: "Processed",
+                cancelled: "Cancelled",
+                loading_my_orders: "Loading my orders...",
+                reorder: "Reorder",
+                logged_in_as: "Logged in as:"
+            },
+            th: {
+                main_title: "ร้านอาหารดาโมเรโน่",
+                main_subtitle: "ระบบสั่งซื้อวัตถุดิบ",
+                admin_dashboard: "แอดมิน",
+                logout: "ออกจากระบบ",
+                my_orders: "คำสั่งซื้อของฉัน",
+                create_order: "สร้างคำสั่งซื้อ",
+                filter_by_status: "กรองตามสถานะ:",
+                all: "ทั้งหมด",
+                pending: "รอดำเนินการ",
+                processed: "ดำเนินการแล้ว",
+                cancelled: "ยกเลิกแล้ว",
+                loading_my_orders: "กำลังโหลดคำสั่งซื้อของฉัน...",
+                reorder: "สั่งอีกครั้ง",
+                logged_in_as: "เข้าสู่ระบบในชื่อ:"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('appLanguage', lang);
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.dataset.key;
+                if (translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.dataset.lang === lang) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            renderMyOrders();
+        }
+
+        function renderPaginationControls(totalOrders) {
+            paginationControls.innerHTML = '';
+            const totalPages = Math.ceil(totalOrders / ordersPerPage);
+            if (totalPages <= 1) return;
+
+            const prevButton = `<button id="prev-page" ${currentPage === 1 ? 'disabled' : ''} class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">&lt;</button>`;
+            const pageInfo = `<span>Page ${currentPage} of ${totalPages}</span>`;
+            const nextButton = `<button id="next-page" ${currentPage === totalPages ? 'disabled' : ''} class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">&gt;</button>`;
+            paginationControls.innerHTML = prevButton + pageInfo + nextButton;
+        }
+
+        function renderMyOrders() {
+            myOrdersList.innerHTML = '';
+            const status = statusFilter.value;
+            const filteredOrders = status === 'All' ? allMyOrders : allMyOrders.filter(o => o.status === status);
+
+            if (filteredOrders.length === 0) {
+                myOrdersList.innerHTML = `<div class="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">${currentLang === 'th' ? 'ไม่พบคำสั่งซื้อ' : 'No orders found.'}</div>`;
+                renderPaginationControls(0);
+                return;
+            }
+
+            const startIndex = (currentPage - 1) * ordersPerPage;
+            const endIndex = startIndex + ordersPerPage;
+            const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+            paginatedOrders.forEach(order => {
+                const itemsHtml = order.items.map(item => `<li class="text-gray-600">${item.quantity} x ${item[`productName_${currentLang}`] || item.productName}</li>`).join('');
+                const orderDate = order.createdAt?.toDate().toLocaleDateString() || 'N/A';
+                const statusText = order.status || 'Pending';
+                let statusClass = 'text-yellow-600 bg-yellow-100';
+                if(statusText === 'Cancelled') statusClass = 'text-red-600 bg-red-100';
+                if(statusText === 'Processed') statusClass = 'text-green-600 bg-green-100';
+
+                const orderHtml = `
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <div class="p-4 cursor-pointer order-header flex justify-between items-center">
+                            <div>
+                                <p class="font-bold">${currentLang === 'th' ? 'คำสั่งซื้อจาก' : 'Order from'} ${orderDate} <span class="text-sm font-medium px-2 py-1 rounded-full ${statusClass}">${statusText}</span></p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                               <button data-id="${order.id}" class="reorder-btn text-sm bg-green-100 text-green-700 px-3 py-1 rounded hover:bg-green-200">${translations[currentLang].reorder}</button>
+                               <svg class="w-5 h-5 chevron-icon transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                        <div class="details-list px-4 pb-4">
+                             <ul class="list-disc list-inside mt-2">${itemsHtml}</ul>
+                        </div>
+                    </div>
+                `;
+                myOrdersList.insertAdjacentHTML('beforeend', orderHtml);
+            });
+            renderPaginationControls(filteredOrders.length);
+        }
+
+        function fetchMyOrders() {
+            if (!currentUser) return;
+            ordersLoading.classList.remove('hidden');
+            const q = query(collection(db, "orders"), where("userId", "==", currentUser.uid));
+            onSnapshot(q, (snapshot) => {
+                allMyOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                allMyOrders.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                ordersLoading.classList.add('hidden');
+                renderMyOrders();
+            }, (error) => {
+                console.error("Error fetching my orders:", error);
+                ordersLoading.innerHTML = `<p class="text-red-500 text-center">${currentLang === 'th' ? 'ไม่สามารถโหลดคำสั่งซื้อของคุณได้' : 'Could not load your orders.'}</p>`;
+            });
+        }
+
+        function handleReorder(orderId) {
+            const order = allMyOrders.find(o => o.id === orderId);
+            if(order && order.items) {
+                localStorage.setItem('reorderCart', JSON.stringify(order.items));
+                window.location.href = './index.html';
+            }
+        }
+
+        async function initializeAppForUser(user) {
+            currentUser = user;
+            const userDocRef = doc(db, "users", user.uid);
+            try {
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    if(userDisplay && userData.name) {
+                        userDisplay.textContent = `${translations[currentLang].logged_in_as} ${userData.name}`;
+                    }
+                    if (userData.departmentId === 'qu76BRyA9CS1XTqSay4X') {
+                        adminLink.classList.remove('hidden');
+                        adminLinkMobile.classList.remove('hidden');
+                    }
+                }
+            } catch (error) { console.error("Error fetching user data:", error); }
+            appContainer.classList.remove('hidden');
+            fetchMyOrders();
+        }
+        
+        onAuthStateChanged(auth, (user) => {
+            if (user) { 
+                setLanguage(currentLang);
+                initializeAppForUser(user); 
+            } else { 
+                window.location.href = './login.html'; 
+            }
+        });
+        
+        langSwitcher.addEventListener('click', (e) => {
+            const lang = e.target.dataset.lang;
+            if (lang) { setLanguage(lang); }
+        });
+        
+        statusFilter.addEventListener('change', () => {
+            currentPage = 1;
+            renderMyOrders();
+        });
+
+        paginationControls.addEventListener('click', (e) => {
+            const status = statusFilter.value;
+            const filteredOrders = status === 'All' ? allMyOrders : allMyOrders.filter(o => o.status === status);
+            const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+            if (e.target.id === 'prev-page') {
+                if(currentPage > 1) {
+                    currentPage--;
+                    renderMyOrders();
+                }
+            } else if (e.target.id === 'next-page') {
+                if(currentPage < totalPages) {
+                    currentPage++;
+                    renderMyOrders();
+                }
+            }
+        });
+
+        myOrdersList.addEventListener('click', (e) => {
+            const reorderBtn = e.target.closest('.reorder-btn');
+            if(reorderBtn) {
+                e.stopPropagation();
+                handleReorder(reorderBtn.dataset.id);
+                return;
+            }
+
+            const header = e.target.closest('.order-header');
+            if(header) {
+                const details = header.nextElementSibling;
+                const icon = header.querySelector('.chevron-icon');
+                if(details.style.maxHeight) {
+                    details.style.maxHeight = null;
+                    icon.style.transform = 'rotate(0deg)';
+                } else {
+                    details.style.maxHeight = details.scrollHeight + "px";
+                    icon.style.transform = 'rotate(180deg)';
+                }
+            }
+        });
+
+        menuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!menuButton.contains(e.target) && !mobileMenu.contains(e.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+
+        const logout = () => {
+            signOut(auth);
+            localStorage.removeItem('appLanguage');
+        }
+        logoutBtn.addEventListener('click', logout);
+        logoutBtnMobile.addEventListener('click', logout);
+    </script>
+</body>
+</html>
+
