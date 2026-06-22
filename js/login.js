@@ -3,7 +3,7 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-
 import { auth, db } from "./config.js";
 import { setLanguage, setupLangSwitcher, translations, currentLang } from "./i18n.js";
 
-// Traductions locales propres au login (injectées en plus du dictionnaire global)
+// Traductions locales propres au login
 translations.en = { ...translations.en, 
     error_title: "Error:", email_label: "Email Address", password_label: "Password", sign_in: "Sign In", 
     forgot_password: "Forgot Password?", invalid_credentials: "Invalid email or password. Please try again.",
@@ -17,31 +17,34 @@ translations.th = { ...translations.th,
     reset_success: "ส่งอีเมลรีเซ็ตรหัสผ่านแล้ว! โปรดตรวจสอบกล่องจดหมายของคุณ", reset_error: "ไม่สามารถส่งอีเมลรีเซ็ตรหัสผ่านได้ โปรดตรวจสอบที่อยู่และลองอีกครั้ง"
 };
 
+// Fonction de routage centralisée
+async function handleRedirection(user) {
+    try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        let targetUrl = './index.html'; 
+        
+        if (userDoc.exists()) {
+            const role = userDoc.data().role;
+            if (role === 'admin' || role === 'superadmin') {
+                targetUrl = './admin/orders.html';
+            }
+        }
+        window.location.replace(targetUrl); 
+    } catch (error) {
+        console.error("Erreur de routage :", error);
+        throw error; // Permet au bloc catch du formulaire de stopper l'animation
+    }
+}
+
 function init() {
     setLanguage(currentLang);
     setupLangSwitcher();
     setupEventListeners();
 
-    onAuthStateChanged(auth, async (user) => {
+    // Auto-redirection si l'utilisateur arrive sur la page en étant déjà connecté
+    onAuthStateChanged(auth, (user) => {
         if (user) {
-            // SÉCURITÉ ANTI-BOUCLE : Ne rediriger que si on est bien sur la page de login
-            if (!window.location.pathname.includes('login')) return;
-
-            try {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                let targetUrl = './index.html'; // Par défaut pour le Staff
-                
-                if (userDoc.exists()) {
-                    const role = userDoc.data().role;
-                    if (role === 'admin' || role === 'superadmin') {
-                        targetUrl = './admin/orders.html';
-                    }
-                }
-                // Utilise replace au lieu de href pour casser la boucle d'historique
-                window.location.replace(targetUrl); 
-            } catch (error) {
-                console.error("Erreur de routage :", error);
-            }
+            handleRedirection(user).catch(() => {});
         }
     });
 }
@@ -62,12 +65,16 @@ function setupEventListeners() {
         errorMessageDiv.classList.add('hidden');
 
         try {
-            await signInWithEmailAndPassword(auth, loginForm.email.value, loginForm.password.value);
-            // La redirection sera gérée automatiquement par le onAuthStateChanged
+            // Tentative de connexion
+            const userCredential = await signInWithEmailAndPassword(auth, loginForm.email.value, loginForm.password.value);
+            // Redirection immédiate
+            await handleRedirection(userCredential.user);
         } catch (error) {
-            console.error("Login Error:", error.code, error.message);
+            console.error("Login Error:", error);
             errorText.textContent = translations[currentLang].invalid_credentials;
             errorMessageDiv.classList.remove('hidden');
+            
+            // On stoppe l'animation et on rend la main à l'utilisateur
             loginButton.disabled = false;
             loginText.classList.remove('hidden');
             loginSpinner.classList.add('hidden');
