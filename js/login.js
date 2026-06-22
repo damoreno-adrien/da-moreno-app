@@ -22,22 +22,23 @@ function init() {
     setupLangSwitcher();
     setupEventListeners();
 
-    // Redirection intelligente si l'utilisateur est déjà connecté
     onAuthStateChanged(auth, async (user) => {
         if (user) {
+            // SÉCURITÉ ANTI-BOUCLE : Ne rediriger que si on est bien sur la page de login
+            if (!window.location.pathname.includes('login')) return;
+
             try {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
+                let targetUrl = './index.html'; // Par défaut pour le Staff
+                
                 if (userDoc.exists()) {
                     const role = userDoc.data().role;
-                    // Redirection selon le rôle
                     if (role === 'admin' || role === 'superadmin') {
-                        window.location.href = './admin/orders.html';
-                    } else {
-                        window.location.href = './index.html';
+                        targetUrl = './admin/orders.html';
                     }
-                } else {
-                    window.location.href = './index.html';
                 }
+                // Utilise replace au lieu de href pour casser la boucle d'historique
+                window.location.replace(targetUrl); 
             } catch (error) {
                 console.error("Erreur de routage :", error);
             }

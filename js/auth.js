@@ -29,24 +29,20 @@ export function initAuth(onSuccessCallback, requireAdmin = true) {
                         userDisplay.textContent = `${translations[currentLang].logged_in_as} ${userData.name} (${currentUserRole.toUpperCase()})`;
                     }
                     
-                    // Si la page requiert d'être Admin ET qu'il ne l'est pas => Dehors
                     if (requireAdmin && currentUserRole !== 'admin' && currentUserRole !== 'superadmin') {
                         denyAccess();
                         return;
                     }
 
-                    // On affiche le composant principal
                     const appContainer = document.getElementById('app');
                     if(appContainer) appContainer.classList.remove('hidden');
                     
-                    // Gestion de l'affichage du lien "Admin" sur l'interface Client
                     if(!requireAdmin && (currentUserRole === 'admin' || currentUserRole === 'superadmin')) {
                         document.getElementById('admin-link')?.classList.remove('hidden');
                         document.getElementById('admin-link-mobile')?.classList.remove('hidden');
                     }
 
                     if(requireAdmin) applyRoleBasedUI();
-                    
                     if(onSuccessCallback) onSuccessCallback(userData);
 
                 } else {
@@ -58,8 +54,11 @@ export function initAuth(onSuccessCallback, requireAdmin = true) {
                 document.body.innerHTML = `<div class="p-8 text-center mt-10"><h1 class="text-2xl text-red-600 font-bold mb-4">Erreur Firebase</h1><p>${error.message}</p></div>`;
             }
         } else {
-            const isDir = window.location.pathname.includes('/admin/');
-            window.location.href = isDir ? '../login.html' : './login.html'; 
+            // SÉCURITÉ ANTI-BOUCLE : Ne pas rediriger si on est déjà sur login
+            if (!window.location.pathname.includes('login')) {
+                const isDir = window.location.pathname.includes('/admin/');
+                window.location.replace(isDir ? '../login.html' : './login.html'); 
+            }
         }
     });
 }
