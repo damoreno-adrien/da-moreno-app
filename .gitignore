@@ -1,0 +1,21 @@
+logins.txt
+# Environnement et dépendances
+node_modules/
+.env
+.env.local
+.env.*
+
+# Vercel
+.vercel/
+
+# Fichiers sensibles
+logins.txt
+*.pem
+*.key
+
+# Logs et OS
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db

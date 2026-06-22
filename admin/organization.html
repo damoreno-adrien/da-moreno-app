@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization - Da Moreno Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://fav.farm/🇮🇹" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .modal-open {
+            overflow: hidden;
+        }
+
+        .table-cell {
+            padding: 8px;
+            white-space: nowrap;
+        }
+
+        @media (min-width: 640px) {
+            .table-cell {
+                padding: 12px 16px;
+            }
+        }
+
+        #toast-container {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            z-index: 50;
+        }
+
+        .toast {
+            transform: translateX(120%);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .lang-btn.active {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .lang-btn:not(.active) {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+
+        .sortable:hover {
+            background-color: #e5e7eb;
+            cursor: pointer;
+        }
+
+        .sortable .sort-icon {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .sortable:hover .sort-icon {
+            opacity: 0.5;
+        }
+
+        .sortable.asc .sort-icon,
+        .sortable.desc .sort-icon {
+            opacity: 1;
+        }
+
+        .nav-link.active {
+            border-bottom: 2px solid #2563eb;
+            color: #2563eb;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+
+    <div id="access-denied" class="hidden text-center p-8">
+        <h1 class="text-2xl font-bold text-red-600">Access Denied</h1>
+        <p class="text-gray-700">Redirecting...</p>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 hidden">
+        <header class="mb-8">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+                <div>
+                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Organization</h1>
+                    <div id="branch-context-container"
+                        class="mt-3 hidden bg-blue-50 border border-blue-200 rounded-lg p-2 flex items-center gap-2 max-w-xs">
+                        <span class="text-sm font-medium text-blue-800" data-key="admin_branch_context">Active
+                            Branch:</span>
+                        <select id="global-branch-context-select"
+                            class="text-sm p-1 bg-white border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"></select>
+                    </div>
+                </div>
+                <div class="w-full sm:w-auto flex flex-col sm:flex-row items-end sm:items-center gap-4">
+                    <p id="user-display" class="text-sm text-gray-600 w-full sm:w-auto text-right sm:text-left"></p>
+                    <div class="w-full sm:w-auto justify-between flex items-center gap-2">
+                        <div id="lang-switcher"
+                            class="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-lg p-1">
+                            <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
+                            <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
+                        </div>
+                        <div class="hidden sm:flex items-center gap-2">
+                            <a href="../index.html"
+                                class="justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm">Create
+                                Order</a>
+                            <a href="../my-orders.html"
+                                class="justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 text-sm">My
+                                Orders</a>
+
+                            <button id="logout-btn"
+                                class="justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                                data-key="logout">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Interne Admin -->
+            <nav class="mt-6 border-b flex gap-6 text-gray-500">
+                <a href="orders.html" class="nav-link py-3 hover:text-blue-600" data-key="order_processing">Orders</a>
+                <a href="catalog.html" class="nav-link py-3 hover:text-blue-600" data-key="catalog">Catalog</a>
+                <a href="organization.html" class="nav-link active py-3" data-key="organization">Organization</a>
+            </nav>
+        </header>
+
+        <!-- Branches CRUD (SuperAdmin) -->
+        <div id="superadmin-branches-section" class="bg-white p-6 rounded-lg shadow-sm mb-8 hidden">
+            <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+                <h2 class="text-2xl font-bold text-gray-700" data-key="branch_management">Branches</h2>
+                <button id="add-branch-btn"
+                    class="bg-blue-600 text-white font-bold p-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                    <span data-key="add_new_branch">Add Branch</span>
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="table-cell text-left font-semibold text-gray-600">ID</th>
+                            <th class="table-cell text-left font-semibold text-gray-600">Name</th>
+                            <th class="table-cell text-left font-semibold text-gray-600" data-key="actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="branches-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Staff Section -->
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+                    <h2 class="text-2xl font-bold text-gray-700" data-key="staff_management">Staff</h2>
+                    <button id="add-staff-btn"
+                        class="bg-purple-600 text-white font-bold p-2 rounded-lg hover:bg-purple-700 flex items-center gap-2">
+                        <span data-key="add_staff_member">Add Staff</span>
+                    </button>
+                </div>
+                <div class="mb-4 relative">
+                    <input type="text" id="staff-search" class="w-full p-2 border rounded-lg text-sm pl-8"
+                        placeholder="Search staff...">
+                    <button id="staff-clear-search"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 hidden">&times;</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="table-cell text-left font-semibold text-gray-600 sortable" data-sort="name"
+                                    data-key="name">Name ⇅</th>
+                                <th class="table-cell text-left font-semibold text-gray-600 sortable"
+                                    data-sort="departmentId" data-key="department">Department ⇅</th>
+                                <th class="table-cell text-left font-semibold text-gray-600" data-key="actions">Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="staff-table-body"></tbody>
+                    </table>
+                    <div id="staff-pagination-controls" class="mt-4 flex justify-center items-center gap-4"></div>
+                </div>
+            </div>
+
+            <!-- Departments Section -->
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+                    <h2 class="text-2xl font-bold text-gray-700" data-key="department_management">Departments</h2>
+                    <button id="add-department-btn"
+                        class="bg-teal-600 text-white font-bold p-2 rounded-lg hover:bg-teal-700 flex items-center gap-2">
+                        <span data-key="add_new_department">Add Department</span>
+                    </button>
+                </div>
+                <div class="mb-4 relative">
+                    <input type="text" id="department-search" class="w-full p-2 border rounded-lg text-sm pl-8"
+                        placeholder="Search departments...">
+                    <button id="department-clear-search"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 hidden">&times;</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="table-cell text-left font-semibold text-gray-600 sortable"
+                                    data-sort="name_en" data-key="name_en">Name (EN) ⇅</th>
+                                <th class="table-cell text-left font-semibold text-gray-600" data-key="branch">Branch
+                                </th>
+                                <th class="table-cell text-left font-semibold text-gray-600" data-key="actions">Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="departments-table-body"></tbody>
+                    </table>
+                    <div id="departments-pagination-controls" class="mt-4 flex justify-center items-center gap-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Branch Modal -->
+    <div id="branch-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 id="branch-modal-title" class="text-2xl font-bold text-gray-800" data-key="add_new_branch">Add New
+                    Branch</h2>
+                <button class="close-modal text-gray-500 text-3xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <form id="branch-form" class="space-y-4">
+                    <input type="hidden" id="branch-id">
+                    <div><label class="block font-medium">Branch Name</label><input type="text" id="branch-name"
+                            class="w-full p-2 border rounded" required></div>
+                </form>
+            </div>
+            <div class="p-4 border-t flex justify-end gap-4">
+                <button type="button" class="close-modal px-6 py-2 bg-gray-200 text-gray-700 rounded-lg">Cancel</button>
+                <button type="submit" form="branch-form"
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Modal -->
+    <div id="staff-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 id="staff-modal-title" class="text-2xl font-bold text-gray-800" data-key="add_staff_member">Add
+                    Staff</h2>
+                <button class="close-modal text-gray-500 text-3xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <form id="staff-form" class="space-y-4">
+                    <input type="hidden" id="staff-id">
+                    <div>
+                        <label class="block font-medium" data-key="user_auth_uid">User Auth UID</label>
+                        <input type="text" id="staff-uid" class="w-full p-2 border rounded" required>
+                    </div>
+                    <div><label class="block font-medium" data-key="full_name">Full Name</label><input type="text"
+                            id="staff-name" class="w-full p-2 border rounded" required></div>
+                    <div>
+                        <label class="block font-medium" data-key="branch">Branch</label>
+                        <select id="staff-branch-select" class="w-full p-2 border rounded" required></select>
+                    </div>
+                    <div>
+                        <label class="block font-medium" data-key="department">Department</label>
+                        <select id="staff-department-select" class="w-full p-2 border rounded" required></select>
+                    </div>
+                    <div>
+                        <label class="block font-medium" data-key="role">Role</label>
+                        <select id="staff-role-select" class="w-full p-2 border rounded" required>
+                            <option value="staff">Staff</option>
+                            <option value="admin">Admin</option>
+                            <option value="superadmin">SuperAdmin</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="p-4 border-t flex justify-end gap-4">
+                <button type="button" class="close-modal px-6 py-2 bg-gray-200 rounded-lg">Cancel</button>
+                <button type="submit" form="staff-form"
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Modal -->
+    <div id="department-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 id="department-modal-title" class="text-2xl font-bold text-gray-800" data-key="add_new_department">
+                    Add Department</h2>
+                <button class="close-modal text-gray-500 text-3xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <form id="department-form" class="space-y-4">
+                    <input type="hidden" id="department-id">
+                    <div><label class="block font-medium">Name (EN)</label><input type="text" id="department-name_en"
+                            class="w-full p-2 border rounded" required></div>
+                    <div><label class="block font-medium">Name (TH)</label><input type="text" id="department-name_th"
+                            class="w-full p-2 border rounded"></div>
+                    <div>
+                        <label class="block font-medium" data-key="branch">Branch</label>
+                        <select id="department-branch-select" class="w-full p-2 border rounded" required></select>
+                    </div>
+                </form>
+            </div>
+            <div class="p-4 border-t flex justify-end gap-4">
+                <button type="button" class="close-modal px-6 py-2 bg-gray-200 rounded-lg">Cancel</button>
+                <button type="submit" form="department-form"
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/organization.js"></script>
+</body>
+
+</html>
