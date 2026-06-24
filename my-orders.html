@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,18 +8,47 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="apple-touch-icon" sizes="180x180" href="public/favicon/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="public/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="public/favicon/favicon-16x16.png">
-    <link rel="manifest" href="public/favicon/site.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="shortcut icon" href="/favicon.ico">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        #toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 50; }
-        .toast { transform: translateX(120%); transition: transform 0.3s ease-in-out; }
-        .toast.show { transform: translateX(0); }
-        .lang-btn.active { background-color: #2563eb; color: white; }
-        .lang-btn:not(.active) { background-color: #e5e7eb; color: #374151; }
-        .nav-link.active { color: #2563eb; border-bottom-color: #2563eb; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        #toast-container {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            z-index: 50;
+        }
+
+        .toast {
+            transform: translateX(120%);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .lang-btn.active {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .lang-btn:not(.active) {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+
+        .nav-link.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
         .details-list {
             max-height: 0;
             overflow: hidden;
@@ -26,17 +56,18 @@
         }
     </style>
 </head>
+
 <body class="bg-gray-100">
-    
+
     <div id="toast-container"></div>
-    
+
     <div id="access-denied" class="hidden text-center p-8">
         <h1 class="text-2xl font-bold text-red-600">Access Denied</h1>
         <p class="text-gray-700">Redirecting...</p>
     </div>
 
     <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 hidden">
-        
+
         <header class="mb-8">
             <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
                 <div>
@@ -46,31 +77,47 @@
                 <div class="w-full sm:w-auto flex flex-col sm:flex-row items-end sm:items-center gap-4">
                     <p id="user-display" class="text-sm text-gray-600 w-full sm:w-auto text-right sm:text-left"></p>
                     <div class="w-full sm:w-auto justify-between flex items-center gap-2">
-                        <div id="lang-switcher" class="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-lg p-1">
+                        <div id="lang-switcher"
+                            class="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-lg p-1">
                             <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
                             <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
                         </div>
                         <div class="relative sm:hidden">
                             <button id="menu-button" class="p-2 rounded-md hover:bg-gray-200">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 6h16M4 12h16m-7 6h7"></path>
+                                </svg>
                             </button>
-                            <div id="mobile-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
-                                <a href="index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="create_order">Create Order</a>
-                                <a href="admin/orders.html" id="admin-link-mobile" class="hidden block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="admin_dashboard">Admin</a>
-                                <button id="logout-btn-mobile" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="logout">Logout</button>
+                            <div id="mobile-menu"
+                                class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                                <a href="index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    data-key="create_order">Create Order</a>
+                                <a href="admin/orders.html" id="admin-link-mobile"
+                                    class="hidden block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    data-key="admin_dashboard">Admin</a>
+                                <button id="logout-btn-mobile"
+                                    class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    data-key="logout">Logout</button>
                             </div>
                         </div>
                         <div class="hidden sm:flex items-center gap-2">
-                            <a href="admin/orders.html" id="admin-link" class="hidden flex-1 sm:flex-none justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm" data-key="admin_dashboard">Admin</a>
-                            <button id="logout-btn" class="flex-1 sm:flex-none justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm" data-key="logout">Logout</button>
+                            <a href="admin/orders.html" id="admin-link"
+                                class="hidden flex-1 sm:flex-none justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm"
+                                data-key="admin_dashboard">Admin</a>
+                            <button id="logout-btn"
+                                class="flex-1 sm:flex-none justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                                data-key="logout">Logout</button>
                         </div>
                     </div>
                 </div>
             </div>
             <nav class="mt-6 border-b hidden sm:block">
                 <div class="flex items-center gap-6 text-gray-500">
-                    <a href="my-orders.html" class="nav-link active py-3 border-b-2 font-semibold" data-key="my_orders">My Orders</a>
-                    <a href="index.html" class="nav-link py-3 border-b-2 border-transparent hover:text-blue-600" data-key="create_order">Create Order</a>
+                    <a href="my-orders.html" class="nav-link active py-3 border-b-2 font-semibold"
+                        data-key="my_orders">My Orders</a>
+                    <a href="index.html" class="nav-link py-3 border-b-2 border-transparent hover:text-blue-600"
+                        data-key="create_order">Create Order</a>
                 </div>
             </nav>
         </header>
@@ -87,13 +134,20 @@
             </div>
             <div id="my-orders-list" class="space-y-4"></div>
             <div id="orders-loading" class="text-center py-10">
-                <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
                 <p class="mt-2 text-gray-500" data-key="loading_my_orders">Loading my orders...</p>
             </div>
-             <div id="pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
+            <div id="pagination-controls" class="mt-8 flex justify-center items-center gap-4"></div>
         </main>
     </div>
 
     <script type="module" src="js/client-orders.js"></script>
 </body>
+
 </html>
