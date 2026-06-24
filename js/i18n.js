@@ -23,6 +23,7 @@ export const translations = {
         filter_by_status: "Filter by status:",
         all: "All", pending: "Pending", processed: "Processed", cancelled: "Cancelled", loading_my_orders: "Loading my orders...", reorder: "Reorder",
         start_date: "Start Date", end_date: "End Date", clear_dates: "Clear", delete_selected: "Delete Selected", delete_permanently: "Delete",
+        inject_manual: "Inject Item (Manual)", select_staff: "Select Staff", target_department: "Target Department", search_product: "Search product...", quantity: "Qty", add_line: "Add Line", replace: "Replace",
     },
     th: {
         management_dashboard: "แดชบอร์ดการจัดการ", dashboard_subtitle: "ดูคำสั่งซื้อและจัดการสินค้า", catalog: "แคตตาล็อก", logout: "ออกจากระบบ",
@@ -45,6 +46,7 @@ export const translations = {
         edit_branch: "แก้ไขสาขา", save_branch: "บันทึกสาขา",
         filter_by_status: "กรองตามสถานะ:", all: "ทั้งหมด", pending: "รอดำเนินการ", processed: "ดำเนินการแล้ว", cancelled: "ยกเลิกแล้ว", loading_my_orders: "กำลังโหลดคำสั่งซื้อของฉัน...", reorder: "สั่งอีกครั้ง",
         start_date: "วันที่เริ่มต้น", end_date: "วันที่สิ้นสุด", clear_dates: "ล้าง", delete_selected: "ลบที่เลือก", delete_permanently: "ลบ",
+        inject_manual: "เพิ่มรายการ (กำหนดเอง)", select_staff: "เลือกพนักงาน", target_department: "แผนกเป้าหมาย", search_product: "ค้นหาสินค้า...", quantity: "จำนวน", add_line: "เพิ่มรายการ", replace: "แทนที่",
     }
 };
 

@@ -59,10 +59,16 @@ function applySort(data, sortKey, sortDir) {
     data.sort((a, b) => {
         let valA = a[sortKey] || '';
         let valB = b[sortKey] || '';
+        
         if (sortKey === 'departmentId') {
-            valA = allDepartments.find(d => d.id === valA)?.[`name_${currentLang}`] || '';
-            valB = allDepartments.find(d => d.id === valB)?.[`name_${currentLang}`] || '';
+            valA = allDepartments.find(d => d.id === valA)?.[`name_${currentLang}`] || allDepartments.find(d => d.id === valA)?.name_en || '';
+            valB = allDepartments.find(d => d.id === valB)?.[`name_${currentLang}`] || allDepartments.find(d => d.id === valB)?.name_en || '';
         }
+        if (sortKey === 'branchId') {
+            valA = allBranches.find(br => br.id === valA)?.name || '';
+            valB = allBranches.find(br => br.id === valB)?.name || '';
+        }
+        
         return sortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
     });
 }
@@ -93,7 +99,7 @@ function renderBranchesTable() {
     tbody.innerHTML = '';
     allBranches.forEach(branch => {
         tbody.insertAdjacentHTML('beforeend', `
-            <tr class="border-b">
+            <tr class="border-b hover:bg-gray-50">
                 <td class="table-cell text-gray-500 font-mono text-xs">${branch.id}</td>
                 <td class="table-cell font-medium">${branch.name}</td>
                 <td class="table-cell">
@@ -118,13 +124,16 @@ function renderStaffTable() {
     const totalPages = Math.ceil(filtered.length / itemsPerPage);
     const paginated = filtered.slice((staffCurrentPage - 1) * itemsPerPage, staffCurrentPage * itemsPerPage);
 
-    tbody.innerHTML = paginated.length === 0 ? `<tr><td colspan="3" class="text-center py-4">No staff found.</td></tr>` : '';
+    tbody.innerHTML = paginated.length === 0 ? `<tr><td colspan="4" class="text-center py-4">No staff found.</td></tr>` : '';
     paginated.forEach(staff => {
         const dept = allDepartments.find(d => d.id === staff.departmentId);
+        const branchName = allBranches.find(b => b.id === staff.branchId)?.name || 'N/A';
+        
         tbody.insertAdjacentHTML('beforeend', `
-            <tr class="border-b">
+            <tr class="border-b hover:bg-gray-50">
                 <td class="table-cell font-medium">${staff.name || 'N/A'}</td>
                 <td class="table-cell text-gray-600">${dept ? dept[`name_${currentLang}`] || dept.name_en : 'N/A'}</td>
+                <td class="table-cell text-sm text-gray-500">${branchName}</td>
                 <td class="table-cell">
                     <button data-id="${staff.id}" class="edit-staff-btn text-blue-600 hover:underline mr-2">Edit</button>
                     <button data-id="${staff.id}" class="delete-staff-btn text-red-600 hover:underline">Delete</button>
@@ -148,13 +157,13 @@ function renderDepartmentsTable() {
     const totalPages = Math.ceil(filtered.length / itemsPerPage);
     const paginated = filtered.slice((deptsCurrentPage - 1) * itemsPerPage, deptsCurrentPage * itemsPerPage);
 
-    tbody.innerHTML = paginated.length === 0 ? `<tr><td colspan="4" class="text-center py-4">No departments found.</td></tr>` : '';
+    tbody.innerHTML = paginated.length === 0 ? `<tr><td colspan="3" class="text-center py-4">No departments found.</td></tr>` : '';
     paginated.forEach(dept => {
         const branch = allBranches.find(b => b.id === dept.branchId);
         tbody.insertAdjacentHTML('beforeend', `
-            <tr class="border-b">
+            <tr class="border-b hover:bg-gray-50">
                 <td class="table-cell font-medium">${dept.name_en || ''}</td>
-                <td class="table-cell text-gray-600 font-semibold">${branch ? branch.name : 'N/A'}</td>
+                <td class="table-cell text-gray-600 font-semibold text-sm">${branch ? branch.name : 'N/A'}</td>
                 <td class="table-cell">
                     <button data-id="${dept.id}" class="edit-department-btn text-blue-600 hover:underline mr-2">Edit</button>
                     <button data-id="${dept.id}" class="delete-department-btn text-red-600 hover:underline">Delete</button>
@@ -167,11 +176,28 @@ function renderDepartmentsTable() {
 
 // --- Event Listeners & Modals ---
 function setupEventListeners() {
-    setupSearch('staff-search', 'staff-clear-search', renderStaffTable);
-    setupSearch('department-search', 'department-clear-search', renderDepartmentsTable);
+    setupSearch('staff-search', 'staff-clear-search', () => { staffCurrentPage = 1; renderStaffTable(); });
+    setupSearch('department-search', 'department-clear-search', () => { deptsCurrentPage = 1; renderDepartmentsTable(); });
+
+    // Dynamic Sort Listeners
+    document.querySelectorAll('.sort-header').forEach(th => {
+        th.addEventListener('click', (e) => {
+            const table = e.currentTarget.dataset.table;
+            const sortType = e.currentTarget.dataset.sort;
+            if(currentSorts[table].key === sortType) {
+                currentSorts[table].dir = currentSorts[table].dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSorts[table].key = sortType;
+                currentSorts[table].dir = 'asc';
+            }
+            if(table === 'staff') renderStaffTable();
+            if(table === 'departments') renderDepartmentsTable();
+        });
+    });
 
     document.getElementById('global-branch-context-select')?.addEventListener('change', (e) => {
         setActiveBranchContext(e.target.value);
+        staffCurrentPage = 1; deptsCurrentPage = 1;
         renderStaffTable(); renderDepartmentsTable();
     });
 
