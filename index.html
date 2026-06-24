@@ -1,29 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Da Moreno | Supply Order System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="public/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="public/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="public/favicon/favicon-16x16.png">
+    <link rel="manifest" href="public/favicon/site.webmanifest">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-        .modal-open { overflow: hidden; }
-        #toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 50; }
-        .toast { transform: translateX(120%); transition: transform 0.3s ease-in-out; }
-        .toast.show { transform: translateX(0); }
-        .lang-btn.active { background-color: #2563eb; color: white; }
-        .lang-btn:not(.active) { background-color: #e5e7eb; color: #374151; }
-        .nav-link.active { color: #2563eb; border-bottom-color: #2563eb; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .modal-open {
+            overflow: hidden;
+        }
+
+        #toast-container {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            z-index: 50;
+        }
+
+        .toast {
+            transform: translateX(120%);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .lang-btn.active {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .lang-btn:not(.active) {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+
+        .nav-link.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
     </style>
 </head>
+
 <body class="bg-gray-100">
-    
+
     <div id="toast-container"></div>
 
     <div id="access-denied" class="hidden text-center p-8">
@@ -32,7 +80,7 @@
     </div>
 
     <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 hidden">
-        
+
         <header class="mb-8">
             <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
                 <div>
@@ -42,32 +90,48 @@
                 <div class="w-full sm:w-auto flex flex-col sm:flex-row items-end sm:items-center gap-4">
                     <p id="user-display" class="text-sm text-gray-600 w-full sm:w-auto text-right sm:text-left"></p>
                     <div class="w-full sm:w-auto justify-between flex items-center gap-2">
-                        <div id="lang-switcher" class="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-lg p-1">
+                        <div id="lang-switcher"
+                            class="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-lg p-1">
                             <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
                             <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
                         </div>
-                         <div class="relative sm:hidden">
+                        <div class="relative sm:hidden">
                             <button id="menu-button" class="p-2 rounded-md hover:bg-gray-200">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 6h16M4 12h16m-7 6h7"></path>
+                                </svg>
                             </button>
                             <!-- Menu Mobile -->
-                            <div id="mobile-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
-                                <a href="my-orders.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="my_orders">My Orders</a>
-                                <a href="admin/orders.html" id="admin-link-mobile" class="hidden block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="admin_dashboard">Admin</a>
-                                <button id="logout-btn-mobile" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-key="logout">Logout</button>
+                            <div id="mobile-menu"
+                                class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                                <a href="my-orders.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    data-key="my_orders">My Orders</a>
+                                <a href="admin/orders.html" id="admin-link-mobile"
+                                    class="hidden block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    data-key="admin_dashboard">Admin</a>
+                                <button id="logout-btn-mobile"
+                                    class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    data-key="logout">Logout</button>
                             </div>
                         </div>
                         <div class="hidden sm:flex items-center gap-2">
-                            <a href="admin/orders.html" id="admin-link" class="hidden flex-1 sm:flex-none justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm" data-key="admin_dashboard">Admin</a>
-                            <button id="logout-btn" class="flex-1 sm:flex-none justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm" data-key="logout">Logout</button>
+                            <a href="admin/orders.html" id="admin-link"
+                                class="hidden flex-1 sm:flex-none justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm"
+                                data-key="admin_dashboard">Admin</a>
+                            <button id="logout-btn"
+                                class="flex-1 sm:flex-none justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                                data-key="logout">Logout</button>
                         </div>
                     </div>
                 </div>
             </div>
             <nav class="mt-6 border-b hidden sm:block">
                 <div class="flex items-center gap-6 text-gray-500">
-                    <a href="my-orders.html" class="nav-link py-3 border-b-2 border-transparent hover:text-blue-600" data-key="my_orders">My Orders</a>
-                    <a href="index.html" class="nav-link active py-3 border-b-2 font-semibold" data-key="create_order">Create Order</a>
+                    <a href="my-orders.html" class="nav-link py-3 border-b-2 border-transparent hover:text-blue-600"
+                        data-key="my_orders">My Orders</a>
+                    <a href="index.html" class="nav-link active py-3 border-b-2 font-semibold"
+                        data-key="create_order">Create Order</a>
                 </div>
             </nav>
         </header>
@@ -76,7 +140,13 @@
             <h2 class="text-2xl font-bold text-gray-800 mb-4" data-key="team_pending_orders">Team's Pending Orders</h2>
             <div id="team-pending-orders-list" class="space-y-4"></div>
             <div id="team-orders-loading" class="text-center py-6">
-                <svg class="animate-spin h-6 w-6 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <svg class="animate-spin h-6 w-6 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
                 <p class="mt-2 text-gray-500" data-key="loading_team_orders">Loading team orders...</p>
             </div>
         </div>
@@ -85,42 +155,82 @@
             <h2 class="text-2xl font-bold text-gray-800 mb-4" data-key="product_catalog">Product Catalog</h2>
             <div class="flex flex-col sm:flex-row gap-4">
                 <div class="relative flex-grow">
-                    <input type="text" id="searchInput" class="w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" data-key-placeholder="search_placeholder">
-                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <button id="clearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 hidden">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8-0 100-16 8 8-0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                    <input type="text" id="searchInput"
+                        class="w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        data-key-placeholder="search_placeholder">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
+                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <button id="clearSearch"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8-0 100-16 8 8-0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                clip-rule="evenodd" />
+                        </svg>
                     </button>
                 </div>
                 <div id="category-filters" class="flex items-center gap-2 overflow-x-auto pb-2"></div>
             </div>
         </div>
 
-        <main id="product-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></main>
-        
+        <main id="product-grid"
+            class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></main>
+
         <div id="loading" class="text-center py-10">
-             <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
             <p class="mt-2 text-gray-500" data-key="loading_products">Loading products...</p>
         </div>
 
-        <button id="cart-button" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-110 z-20">
-            <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-            <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">0</span>
+        <button id="cart-button"
+            class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-110 z-20">
+            <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            <span id="cart-count"
+                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">0</span>
         </button>
 
         <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
             <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
                 <div class="flex justify-between items-center p-4 border-b">
-                    <h2 id="cart-modal-title" class="text-2xl font-bold text-gray-800" data-key="current_order">Current Order</h2>
-                    <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+                    <h2 id="cart-modal-title" class="text-2xl font-bold text-gray-800" data-key="current_order">Current
+                        Order</h2>
+                    <button id="close-modal-btn"
+                        class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
                 </div>
                 <div id="cart-items-container" class="p-6 overflow-y-auto"></div>
                 <div class="p-6 border-t mt-auto">
-                    <textarea id="order-notes" class="w-full p-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" data-key-placeholder="notes_placeholder"></textarea>
+                    <textarea id="order-notes"
+                        class="w-full p-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        data-key-placeholder="notes_placeholder"></textarea>
                     <div class="flex justify-end gap-4">
-                        <button id="close-modal-btn-footer" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300" data-key="close">Close</button>
-                        <button id="place-order-btn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+                        <button id="close-modal-btn-footer"
+                            class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                            data-key="close">Close</button>
+                        <button id="place-order-btn"
+                            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
                             <span id="place-order-text" data-key="place_order">Place Order</span>
-                            <svg id="order-spinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <svg id="order-spinner" class="animate-spin h-5 w-5 text-white hidden"
+                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8-0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -131,4 +241,5 @@
     <!-- On charge le bon script modulaire -->
     <script type="module" src="js/client-catalog.js"></script>
 </body>
+
 </html>
