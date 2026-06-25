@@ -2,7 +2,7 @@ import { collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, writeBatch }
 import { db } from "../../js/config.js";
 import { initAuth, setupLogout } from "../../js/auth.js";
 import { setLanguage, setupLangSwitcher, translations, currentLang } from "../../js/i18n.js";
-import { showToast, renderPagination, setupSearch, setupMobileMenu } from "../../js/ui.js";
+import { showToast, renderPagination, setupSearch, setupMobileMenu, formatDate } from "../../js/ui.js";
 
 let allProducts = [], allSuppliers = [];
 let productsCurrentPage = 1, suppliersCurrentPage = 1;

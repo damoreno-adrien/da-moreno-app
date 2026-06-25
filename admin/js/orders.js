@@ -2,7 +2,7 @@ import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, writeB
 import { db } from "../../js/config.js";
 import { initAuth, currentUserRole, currentUserBranchId, activeBranchContext, setActiveBranchContext, setupLogout } from "../../js/auth.js";
 import { setLanguage, setupLangSwitcher, translations, currentLang } from "../../js/i18n.js";
-import { showToast, renderPagination, setupMobileMenu } from "../../js/ui.js";
+import { showToast, renderPagination, setupMobileMenu, formatDate } from "../../js/ui.js";
 
 let pendingOrders = [], processedOrders = [], allStaff = [], allDepartments = [], allSuppliers = [], allProducts = [], allBranches = [];
 let historyCurrentPage = 1;
@@ -106,21 +106,26 @@ function renderPendingOrders() {
             for (const user in ordersHierarchy[branch][dept]) {
                 html += `<div class="mt-2 pl-4 border-l-2 border-blue-500"><p class="font-semibold text-md">${user}</p>`;
                 ordersHierarchy[branch][dept][user].forEach(order => {
+                    const orderDate = order.createdAt ? formatDate(order.createdAt.toDate()) : 'N/A';
+
                     const itemsHtml = order.items.map(item => `
-                        <li class="flex items-center gap-2 mb-1">
-                            <input type="checkbox" data-order-id="${order.id}" data-product-id="${item.productId}" class="item-select-checkbox w-4 h-4 text-blue-600 cursor-pointer" checked>
-                            <span class="text-gray-700">${item.quantity} x ${item[`productName_${currentLang}`] || item.productName}</span>
-                        </li>`).join('');
-                        html += `
-                            <div class="relative mt-2 bg-white p-3 rounded shadow-sm">
-                                <ul class="text-gray-600">${itemsHtml}</ul>
-                                ${order.notes ? `<p class="text-sm text-gray-500 mt-2 italic border-l-2 border-gray-300 pl-2"><strong>Note:</strong> ${order.notes}</p>` : ''}
-                                <div class="flex flex-wrap gap-2 mt-3 pt-2 border-t">
-                                    <button data-id="${order.id}" class="edit-order-btn text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">Edit</button>
-                                    <button data-id="${order.id}" class="cancel-order-btn text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200">Cancel</button>
-                                    <button data-id="${order.id}" class="permanent-delete-order-btn text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 ml-auto flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> ${translations[currentLang].delete_permanently || 'Delete'}</button>
-                                 </div>
-                            </div>`;
+        <li class="flex items-center gap-2 mb-1">
+            <input type="checkbox" data-order-id="${order.id}" data-product-id="${item.productId}" class="item-select-checkbox w-4 h-4 text-blue-600 cursor-pointer" checked>
+            <span class="text-gray-700">${item.quantity} x ${item[`productName_${currentLang}`] || item.productName}</span>
+        </li>`).join('');
+
+                    html += `
+        <div class="relative mt-2 bg-white p-3 rounded shadow-sm">
+            <p class="text-xs font-bold text-gray-400 mb-2 uppercase">${orderDate}</p>
+            
+            <ul class="text-gray-600">${itemsHtml}</ul>
+            ${order.notes ? `<p class="text-sm text-gray-500 mt-2 italic border-l-2 border-gray-300 pl-2"><strong>Note:</strong> ${order.notes}</p>` : ''}
+            <div class="flex flex-wrap gap-2 mt-3 pt-2 border-t">
+                <button data-id="${order.id}" class="edit-order-btn text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">Edit</button>
+                <button data-id="${order.id}" class="cancel-order-btn text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200">Cancel</button>
+                <button data-id="${order.id}" class="permanent-delete-order-btn text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 ml-auto flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> ${translations[currentLang].delete_permanently || 'Delete'}</button>
+            </div>
+        </div>`;
                 });
                 html += `</div>`;
             }
@@ -133,22 +138,22 @@ function renderPendingOrders() {
 
 function generateSupplierList() {
     const checkedCheckboxes = Array.from(document.querySelectorAll('.item-select-checkbox:checked'));
-    if(checkedCheckboxes.length === 0) return alert("Veuillez sélectionner au moins un article.");
+    if (checkedCheckboxes.length === 0) return alert("Veuillez sélectionner au moins un article.");
 
     const selectedData = {};
     checkedCheckboxes.forEach(cb => {
-        if(!selectedData[cb.dataset.orderId]) selectedData[cb.dataset.orderId] = [];
+        if (!selectedData[cb.dataset.orderId]) selectedData[cb.dataset.orderId] = [];
         selectedData[cb.dataset.orderId].push(cb.dataset.productId);
     });
 
     const mergedItems = {};
     for (const orderId in selectedData) {
         const order = pendingOrders.find(o => o.id === orderId);
-        if(!order) continue;
+        if (!order) continue;
         const branchName = allBranches.find(b => b.id === order.branchId)?.name || 'Unknown Branch';
-        
+
         order.items.filter(i => selectedData[orderId].includes(i.productId)).forEach(item => {
-            const key = item.productId + '_' + order.branchId; 
+            const key = item.productId + '_' + order.branchId;
             if (!mergedItems[key]) mergedItems[key] = { ...item, branchName, quantity: 0 };
             mergedItems[key].quantity += item.quantity;
         });
@@ -247,7 +252,7 @@ function renderOrderHistory() {
             const user = allStaff.find(s => s.id === order.userId);
             const branch = allBranches.find(b => b.id === order.branchId);
             const itemsHtml = order.items.map(item => `<li class="text-gray-600">${item.quantity} x ${item[`productName_${currentLang}`] || item.productName}</li>`).join('');
-            const orderDate = order.createdAt?.toDate().toLocaleDateString() || 'N/A';
+            const orderDate = formatDate(order.createdAt.toDate()) || 'N/A';
             const statusClass = order.status === 'Cancelled' ? 'text-red-500' : 'text-gray-500';
 
             tbody.insertAdjacentHTML('beforeend', `
@@ -316,7 +321,7 @@ function setupSearchInputs() {
         const supplierName = allSuppliers.find(s => s.id === p.supplier)?.name || 'N/A';
         const inactiveStyling = !p.isActive ? 'text-gray-400 bg-gray-50' : 'text-gray-800 hover:bg-blue-50';
         const inactiveBadge = !p.isActive ? '<span class="text-xs text-red-500 font-bold ml-2 border border-red-500 px-1 rounded">(INACTIVE)</span>' : '';
-        
+
         div.className = `p-2 cursor-pointer border-b text-sm flex justify-between items-center ${inactiveStyling}`;
         div.innerHTML = `
             <div class="flex-grow flex items-center">
@@ -333,13 +338,13 @@ function setupSearchInputs() {
     searchInput?.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         resultsDiv.innerHTML = '';
-        if(term.length < 2) { resultsDiv.classList.add('hidden'); return; }
-        
-        const matches = allProducts.filter(p => ((p.name_en||'').toLowerCase().includes(term) || (p.product_reference||'').toLowerCase().includes(term)));
+        if (term.length < 2) { resultsDiv.classList.add('hidden'); return; }
+
+        const matches = allProducts.filter(p => ((p.name_en || '').toLowerCase().includes(term) || (p.product_reference || '').toLowerCase().includes(term)));
         matches.forEach(p => {
             renderSearchResult(p, resultsDiv, () => {
                 searchInput.value = `[${p.product_reference || 'REF'}] ${p[`name_${currentLang}`] || p.name_en}`;
-                idInput.value = p.id; 
+                idInput.value = p.id;
                 resultsDiv.classList.add('hidden');
             });
         });
@@ -375,17 +380,17 @@ function setupSearchInputs() {
     // Recherche Remplacement
     const replaceInput = document.getElementById('replace-product-search');
     const replaceResults = document.getElementById('replace-product-results');
-    
+
     replaceInput?.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         replaceResults.innerHTML = '';
-        if(term.length < 2) { replaceResults.classList.add('hidden'); return; }
-        
-        const matches = allProducts.filter(p => ((p.name_en||'').toLowerCase().includes(term) || (p.product_reference||'').toLowerCase().includes(term)));
+        if (term.length < 2) { replaceResults.classList.add('hidden'); return; }
+
+        const matches = allProducts.filter(p => ((p.name_en || '').toLowerCase().includes(term) || (p.product_reference || '').toLowerCase().includes(term)));
         matches.forEach(p => {
             renderSearchResult(p, replaceResults, () => {
                 const itemIndex = currentEditingOrder.items.findIndex(i => i.productId === replaceTargetProductId);
-                if(itemIndex !== -1) {
+                if (itemIndex !== -1) {
                     currentEditingOrder.items[itemIndex] = {
                         productId: p.id, productName: p.name_en, productName_th: p.name_th,
                         packaging: p.packaging_en, packaging_th: p.packaging_th,
@@ -436,7 +441,7 @@ async function markOrdersAsProcessed() {
     for (const orderId in selectedData) {
         const selectedProductIds = selectedData[orderId];
         const originalOrder = pendingOrders.find(o => o.id === orderId);
-        if(!originalOrder) continue;
+        if (!originalOrder) continue;
 
         const selectedItems = originalOrder.items.filter(i => selectedProductIds.includes(i.productId));
         const remainingItems = originalOrder.items.filter(i => !selectedProductIds.includes(i.productId));
@@ -451,7 +456,7 @@ async function markOrdersAsProcessed() {
             batch.set(newOrderRef, newOrderData);
         }
     }
-    
+
     try {
         await batch.commit();
         showToast('Items processed successfully.');
@@ -467,14 +472,14 @@ function setupEventListeners() {
         setActiveBranchContext(e.target.value);
         renderPendingOrders(); renderOrderHistory();
         document.getElementById('close-replace-modal')?.addEventListener('click', () => {
-        document.getElementById('replace-product-modal').classList.replace('flex', 'hidden');
-    });
+            document.getElementById('replace-product-modal').classList.replace('flex', 'hidden');
+        });
     });
 
     document.querySelectorAll('.sort-header').forEach(th => {
         th.addEventListener('click', (e) => {
             const sortType = e.currentTarget.dataset.sort;
-            if(historySortBy === sortType) historySortDesc = !historySortDesc;
+            if (historySortBy === sortType) historySortDesc = !historySortDesc;
             else { historySortBy = sortType; historySortDesc = false; }
             renderOrderHistory();
         });
@@ -566,7 +571,7 @@ function setupEventListeners() {
         const button = e.target.closest('.quantity-btn, .remove-item, .replace-item-btn');
         if (!button) return;
         const id = button.dataset.id;
-        
+
         if (button.classList.contains('replace-item-btn')) {
             replaceTargetProductId = id;
             document.getElementById('replace-product-search').value = '';

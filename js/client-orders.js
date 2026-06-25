@@ -70,7 +70,7 @@ function renderMyOrders() {
 
     paginatedOrders.forEach(order => {
         const itemsHtml = order.items.map(item => `<li class="text-gray-600">${item.quantity} x ${item[`productName_${currentLang}`] || item.productName}</li>`).join('');
-        const orderDate = order.createdAt?.toDate().toLocaleDateString() || 'N/A';
+        const orderDate = formatDate(order.createdAt.toDate()) || 'N/A';
         const statusText = order.status || 'Pending';
         
         let statusClass = 'text-yellow-600 bg-yellow-100';

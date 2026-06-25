@@ -2,7 +2,7 @@ import { collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, setDoc } fro
 import { db } from "../../js/config.js";
 import { initAuth, currentUserRole, currentUserBranchId, activeBranchContext, setActiveBranchContext, setupLogout } from "../../js/auth.js";
 import { setLanguage, setupLangSwitcher, translations, currentLang } from "../../js/i18n.js";
-import { showToast, renderPagination, setupSearch, setupMobileMenu } from "../../js/ui.js";
+import { showToast, renderPagination, setupSearch, setupMobileMenu, formatDate } from "../../js/ui.js";
 
 let allBranches = [], allStaff = [], allDepartments = [];
 let staffCurrentPage = 1, deptsCurrentPage = 1;
