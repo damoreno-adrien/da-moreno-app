@@ -19,11 +19,15 @@ export const translations = {
         save_supplier: "Save Supplier", my_orders: "My Orders", create_order: "Create Order", edit_order: "Edit Order", update_order: "Update Order",
         import_csv: "Import", export_csv: "Export", branch_management: "Branches", add_new_branch: "Add Branch", branch: "Branch",
         select_branch: "Select a branch", role: "Role", admin_branch_context: "Active Branch:", all_branches: "All Branches",
-        edit_branch: "Edit Branch", save_branch: "Save Branch",
-        filter_by_status: "Filter by status:",
+        edit_branch: "Edit Branch", save_branch: "Save Branch", filter_by_status: "Filter by status:",
         all: "All", pending: "Pending", processed: "Processed", cancelled: "Cancelled", loading_my_orders: "Loading my orders...", reorder: "Reorder",
         start_date: "Start Date", end_date: "End Date", clear_dates: "Clear", delete_selected: "Delete Selected", delete_permanently: "Delete",
         inject_manual: "Inject Item (Manual)", select_staff: "Select Staff", target_department: "Target Department", search_product: "Search product...", quantity: "Qty", add_line: "Add Line", replace: "Replace",
+        company_info: "Company Info", contact_person: "Contact Person", same_as_company: "Same as Company",
+        address: "Address", phone_number: "Phone Number", line_id: "LINE ID", preferred_channel: "Preferred Channel",
+        payment_terms: "Payment Terms", other_precise: "Other (precise)", supplier_details: "Supplier Details", 
+        products_supplied: "Products Supplied", back_to_suppliers: "Back to Suppliers", email_address: "Email Address",
+        bank_details: "Bank Details", bank_name: "Bank Name", account_number: "Account Number", account_name: "Account Name", select_bank: "Select Bank...", other_bank: "Other Bank"
     },
     th: {
         management_dashboard: "แดชบอร์ดการจัดการ", dashboard_subtitle: "ดูคำสั่งซื้อและจัดการสินค้า", catalog: "แคตตาล็อก", logout: "ออกจากระบบ",
@@ -43,10 +47,15 @@ export const translations = {
         save_supplier: "บันทึกซัพพลายเออร์", my_orders: "คำสั่งซื้อของฉัน", create_order: "สร้างคำสั่งซื้อ", edit_order: "แก้ไขคำสั่งซื้อ", update_order: "อัปเดตคำสั่งซื้อ",
         import_csv: "นำเข้า", export_csv: "ส่งออก", branch_management: "สาขา", add_new_branch: "เพิ่มสาขา", branch: "สาขา",
         select_branch: "เลือกสาขา", role: "บทบาท", admin_branch_context: "สาขาที่เปิดอยู่:", all_branches: "ทุกสาขา",
-        edit_branch: "แก้ไขสาขา", save_branch: "บันทึกสาขา",
-        filter_by_status: "กรองตามสถานะ:", all: "ทั้งหมด", pending: "รอดำเนินการ", processed: "ดำเนินการแล้ว", cancelled: "ยกเลิกแล้ว", loading_my_orders: "กำลังโหลดคำสั่งซื้อของฉัน...", reorder: "สั่งอีกครั้ง",
+        edit_branch: "แก้ไขสาขา", save_branch: "บันทึกสาขา", filter_by_status: "กรองตามสถานะ:",
+        all: "ทั้งหมด", pending: "รอดำเนินการ", processed: "ดำเนินการแล้ว", cancelled: "ยกเลิกแล้ว", loading_my_orders: "กำลังโหลดคำสั่งซื้อของฉัน...", reorder: "สั่งอีกครั้ง",
         start_date: "วันที่เริ่มต้น", end_date: "วันที่สิ้นสุด", clear_dates: "ล้าง", delete_selected: "ลบที่เลือก", delete_permanently: "ลบ",
         inject_manual: "เพิ่มรายการ (กำหนดเอง)", select_staff: "เลือกพนักงาน", target_department: "แผนกเป้าหมาย", search_product: "ค้นหาสินค้า...", quantity: "จำนวน", add_line: "เพิ่มรายการ", replace: "แทนที่",
+        company_info: "ข้อมูลบริษัท", contact_person: "ผู้ติดต่อ", same_as_company: "เหมือนกับบริษัท",
+        address: "ที่อยู่", phone_number: "เบอร์โทรศัพท์", line_id: "LINE ID", preferred_channel: "ช่องทางที่สะดวก",
+        payment_terms: "เงื่อนไขการชำระเงิน", other_precise: "อื่นๆ (โปรดระบุ)", supplier_details: "รายละเอียดซัพพลายเออร์", 
+        products_supplied: "สินค้าที่จัดหา", back_to_suppliers: "กลับไปหน้ารายชื่อซัพพลายเออร์", email_address: "ที่อยู่อีเมล",
+        bank_details: "รายละเอียดบัญชีธนาคาร", bank_name: "ชื่อธนาคาร", account_number: "หมายเลขบัญชี", account_name: "ชื่อบัญชี", select_bank: "เลือกธนาคาร...", other_bank: "ธนาคารอื่นๆ"
     }
 };
 

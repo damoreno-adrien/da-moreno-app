@@ -7,7 +7,6 @@
     <title>Catalog - Da Moreno Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -96,45 +95,86 @@
     <div id="toast-container"></div>
 
     <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 hidden">
-        <header class="mb-8">
-            <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-                <div>
-                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-800" data-key="catalog">Catalog</h1>
-                    <p class="text-sm text-gray-500 mt-1">Shared catalog across all branches</p>
-                </div>
-                <div class="w-full sm:w-auto flex flex-col sm:flex-row items-end sm:items-center gap-4">
-                    <p id="user-display" class="text-sm text-gray-600 w-full sm:w-auto text-right sm:text-left"></p>
-                    <div class="w-full sm:w-auto justify-between flex items-center gap-2">
-                        <div id="lang-switcher"
-                            class="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-lg p-1">
-                            <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
-                            <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
-                        </div>
-                        <div class="hidden sm:flex items-center gap-2">
-                            <a href="../index.html"
-                                class="justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm">Create
-                                Order</a>
-                            <a href="../my-orders.html"
-                                class="justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 text-sm">My
-                                Orders</a>
+        <header class="mb-8 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
 
-                            <button id="logout-btn"
-                                class="justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                                data-key="logout">Logout</button>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-800" data-key="page_title">Products Catalog</h1>
+                    <span id="role-badge"
+                        class="hidden text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wide"></span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-between xl:justify-end">
+                    <p id="user-display" class="text-sm font-medium text-gray-600 hidden 2xl:block truncate max-w-xs">
+                    </p>
+
+                    <div id="branch-context-container"
+                        class="hidden items-center bg-gray-50 border rounded-lg px-2 py-1 shrink-0 order-1">
+                        <span class="text-xs text-gray-500 mr-2 font-bold uppercase">Branch:</span>
+                        <select id="branch-context-select"
+                            class="bg-transparent text-sm font-bold text-blue-700 focus:outline-none">
+                            <option value="ALL">ALL BRANCHES</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-2 order-2 shrink-0 ml-auto xl:ml-0">
+                        <div id="lang-switcher"
+                            class="flex items-center text-sm font-medium border border-gray-300 rounded-lg p-1 bg-white">
+                            <button data-lang="en" class="lang-btn px-2 py-1 rounded-md transition-colors">EN</button>
+                            <button data-lang="th" class="lang-btn px-2 py-1 rounded-md transition-colors">TH</button>
                         </div>
+                        <button id="logout-btn"
+                            class="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg text-sm font-semibold transition-colors"
+                            data-key="logout">Logout</button>
+                    </div>
+
+                    <div class="flex w-full xl:w-auto items-center gap-2 shrink-0 order-3 mt-1 xl:mt-0">
+                        <a href="../index.html"
+                            class="flex-1 xl:flex-none text-center px-3 py-2 xl:py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm font-semibold transition-colors shadow-sm whitespace-nowrap"
+                            data-key="create_order">Create Order</a>
+                        <a href="../my-orders.html"
+                            class="flex-1 xl:flex-none text-center px-3 py-2 xl:py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 text-sm font-semibold transition-colors bg-white shadow-sm whitespace-nowrap"
+                            data-key="my_orders">My Orders</a>
                     </div>
                 </div>
             </div>
 
-            <!-- Navigation Interne Admin -->
-            <nav class="mt-6 border-b flex gap-6 text-gray-500">
-                <a href="orders.html" class="nav-link py-3 hover:text-blue-600" data-key="order_processing">Orders</a>
-                <a href="catalog.html" class="nav-link active py-3" data-key="catalog">Catalog</a>
-                <a href="organization.html" class="nav-link py-3 hover:text-blue-600">Organization</a>
+            <nav
+                class="mt-6 flex gap-1 sm:gap-4 text-sm sm:text-base font-medium text-gray-500 overflow-x-auto pb-2 scrollbar-hide w-full border-b">
+
+                <a href="orders.html"
+                    class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors"
+                    data-key="order_processing">
+                    Orders
+                    <span id="pending-orders-badge"
+                        class="hidden absolute top-0 -right-1 bg-red-500 text-white text-[10px] font-bold h-4 min-w-[16px] px-1 flex items-center justify-center rounded-full shadow-sm animate-pulse"></span>
+                </a>
+
+                <a href="catalog.html"
+                    class="nav-link active text-blue-600 border-b-2 border-blue-600 py-2 px-3 bg-blue-50/50 rounded-t-lg whitespace-nowrap"
+                    data-key="catalog">Catalog</a>
+
+                <a href="suppliers.html"
+                    class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors"
+                    data-key="supplier_management">Suppliers</a>
+
+                <a href="organization.html"
+                    class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors">Organization</a>
+
+                <a href="admin-panel.html" id="admin-link"
+                    class="hidden nav-link whitespace-nowrap py-2 px-3 text-purple-600 hover:bg-purple-50 rounded-t-lg transition-colors items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Settings
+                </a>
             </nav>
         </header>
 
-        <!-- Product Management -->
         <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
             <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
                 <h2 class="text-2xl font-bold text-gray-700" data-key="product_management">Product Management</h2>
@@ -187,51 +227,8 @@
                 <div id="products-pagination-controls" class="mt-4 flex justify-center items-center gap-4"></div>
             </div>
         </div>
-
-        <!-- Supplier Management -->
-        <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
-            <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
-                <h2 class="text-2xl font-bold text-gray-700" data-key="supplier_management">Suppliers</h2>
-                <div
-                    class="flex flex-col sm:flex-row sm:flex-wrap items-center justify-start sm:justify-end gap-2 w-full md:w-auto">
-                    <input type="file" id="supplier-csv-input" class="hidden" accept=".csv">
-                    <button id="import-supplier-btn"
-                        class="w-full sm:w-auto bg-indigo-600 text-white font-bold p-2 rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2">
-                        <span data-key="import_csv">Import</span>
-                    </button>
-                    <button id="export-supplier-btn"
-                        class="w-full sm:w-auto bg-gray-700 text-white font-bold p-2 rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2">
-                        <span data-key="export_csv">Export</span>
-                    </button>
-                    <button id="add-supplier-btn"
-                        class="w-full sm:w-auto bg-orange-600 text-white font-bold p-2 rounded-lg hover:bg-orange-700 flex items-center justify-center gap-2">
-                        <span data-key="add_new_supplier">Add Supplier</span>
-                    </button>
-                </div>
-            </div>
-            <div class="mb-4 relative">
-                <input type="text" id="supplier-search" class="w-full p-2 border rounded-lg text-sm pl-8"
-                    placeholder="Search suppliers...">
-                <button id="supplier-clear-search"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 hidden">&times;</button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full bg-white">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="table-cell text-left font-semibold text-gray-600 sortable" data-sort="name"
-                                data-key="name">Name ⇅</th>
-                            <th class="table-cell text-left font-semibold text-gray-600" data-key="actions">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="suppliers-table-body"></tbody>
-                </table>
-                <div id="suppliers-pagination-controls" class="mt-4 flex justify-center items-center gap-4"></div>
-            </div>
-        </div>
     </div>
 
-    <!-- Product Modal -->
     <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center p-4 border-b">
@@ -284,30 +281,6 @@
                     data-key="cancel">Cancel</button>
                 <button type="submit" form="product-form" class="px-6 py-2 bg-blue-600 text-white rounded-lg"
                     data-key="save_product">Save Product</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Supplier Modal -->
-    <div id="supplier-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-30 p-4">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg">
-            <div class="flex justify-between items-center p-4 border-b">
-                <h2 id="supplier-modal-title" class="text-2xl font-bold text-gray-800" data-key="add_new_supplier">Add
-                    New Supplier</h2>
-                <button class="close-modal text-gray-500 text-3xl">&times;</button>
-            </div>
-            <div class="p-6">
-                <form id="supplier-form" class="space-y-4">
-                    <input type="hidden" id="supplier-id">
-                    <div><label class="block font-medium" data-key="name">Name</label><input type="text"
-                            id="supplier-name" class="w-full p-2 border rounded" required></div>
-                </form>
-            </div>
-            <div class="p-4 border-t flex justify-end gap-4">
-                <button type="button" class="close-modal px-6 py-2 bg-gray-200 text-gray-700 rounded-lg"
-                    data-key="cancel">Cancel</button>
-                <button type="submit" form="supplier-form" class="px-6 py-2 bg-blue-600 text-white rounded-lg"
-                    data-key="save_supplier">Save Supplier</button>
             </div>
         </div>
     </div>

@@ -8,6 +8,7 @@ let allProducts = [], allSuppliers = [];
 let productsCurrentPage = 1, suppliersCurrentPage = 1;
 const itemsPerPage = 10;
 let currentSorts = { products: { key: 'name_en', dir: 'asc' }, suppliers: { key: 'name', dir: 'asc' } };
+let isFirstLoad = true;
 
 function init() {
     setupLangSwitcher(() => { renderProductsTable(); renderSuppliersTable(); });
@@ -22,7 +23,6 @@ function init() {
     });
 }
 
-// --- Fetch Data ---
 function fetchAllSuppliers() {
     onSnapshot(collection(db, "suppliers"), (snapshot) => {
         allSuppliers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -36,10 +36,40 @@ function fetchAllProducts() {
         allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         populateCategorySuggestions();
         renderProductsTable();
+        
+        if (isFirstLoad) {
+            checkHashForEdit();
+            isFirstLoad = false;
+        }
     });
 }
 
-// --- Utils ---
+function checkHashForEdit() {
+    const hash = window.location.hash;
+    const editId = hash.split('#edit=')[1]?.trim();
+
+    if (editId && allProducts.length > 0) {
+        const p = allProducts.find(x => x.id === editId);
+        if (p) {
+            document.getElementById('product-id').value = p.id;
+            document.getElementById('name_en').value = p.name_en || '';
+            document.getElementById('name_th').value = p.name_th || '';
+            document.getElementById('product_reference').value = p.product_reference || '';
+            document.getElementById('product-supplier-select').value = p.supplier || '';
+            document.getElementById('category_en').value = p.category_en || '';
+            document.getElementById('category_th').value = p.category_th || '';
+            document.getElementById('packaging_en').value = p.packaging_en || '';
+            document.getElementById('packaging_th').value = p.packaging_th || '';
+            document.getElementById('keywords').value = p.keywords || '';
+            document.getElementById('imageUrl').value = p.imageUrl || '';
+            document.getElementById('isActive').checked = p.isActive !== false;
+
+            document.getElementById('product-modal').classList.replace('hidden', 'flex');
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    }
+}
+
 function applySort(data, sortKey, sortDir, entityType) {
     data.sort((a, b) => {
         let valA = a[sortKey]; let valB = b[sortKey];
@@ -66,15 +96,18 @@ function populateSupplierDropdowns() {
     
     if (filterSelect) {
         filterSelect.innerHTML = `<option value="All">${translations[currentLang].all_suppliers}</option>`;
-        allSuppliers.forEach(s => filterSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+        allSuppliers.forEach(s => {
+            if (!s.isArchived) filterSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+        });
     }
     if (modalSelect) {
         modalSelect.innerHTML = `<option value="">${currentLang === 'th' ? 'เลือกซัพพลายเออร์' : 'Select a supplier'}</option>`;
-        allSuppliers.forEach(s => modalSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+        allSuppliers.forEach(s => {
+             if (!s.isArchived) modalSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+        });
     }
 }
 
-// --- Render Tables ---
 function renderProductsTable() {
     const tbody = document.getElementById('products-table-body');
     const supplierId = document.getElementById('supplier-filter').value;
@@ -82,7 +115,8 @@ function renderProductsTable() {
     
     let filtered = allProducts.filter(p => {
         const match = (p.name_en || '').toLowerCase().includes(searchTerm) || (p.name_th || '').toLowerCase().includes(searchTerm) || (p.product_reference || '').toLowerCase().includes(searchTerm) || (p.keywords || '').toLowerCase().includes(searchTerm);
-        return (supplierId === 'All' || p.supplier === supplierId) && match;
+        // EXCLUSION DES ARCHIVÉS
+        return !p.isArchived && (supplierId === 'All' || p.supplier === supplierId) && match;
     });
 
     applySort(filtered, currentSorts.products.key, currentSorts.products.dir, 'products');
@@ -112,8 +146,9 @@ function renderProductsTable() {
 
 function renderSuppliersTable() {
     const tbody = document.getElementById('suppliers-table-body');
+    if(!tbody) return; 
     const searchTerm = document.getElementById('supplier-search').value.toLowerCase();
-    let filtered = allSuppliers.filter(s => s.name.toLowerCase().includes(searchTerm));
+    let filtered = allSuppliers.filter(s => s.name.toLowerCase().includes(searchTerm) && !s.isArchived);
 
     applySort(filtered, currentSorts.suppliers.key, currentSorts.suppliers.dir, 'suppliers');
     const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -134,10 +169,9 @@ function renderSuppliersTable() {
     renderPagination(document.getElementById('suppliers-pagination-controls'), totalPages, suppliersCurrentPage, (pg) => { suppliersCurrentPage = pg; renderSuppliersTable(); });
 }
 
-// --- Event Listeners & Modals ---
 function setupEventListeners() {
     setupSearch('product-search', 'product-clear-search', renderProductsTable);
-    setupSearch('supplier-search', 'supplier-clear-search', renderSuppliersTable);
+    if(document.getElementById('supplier-search')) setupSearch('supplier-search', 'supplier-clear-search', renderSuppliersTable);
     document.getElementById('supplier-filter')?.addEventListener('change', () => { productsCurrentPage = 1; renderProductsTable(); });
 
     document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', (e) => {
@@ -158,7 +192,8 @@ function setupEventListeners() {
             product_reference: document.getElementById('product_reference').value, supplier: document.getElementById('product-supplier-select').value,
             category_en: document.getElementById('category_en').value, category_th: document.getElementById('category_th').value,
             packaging_en: document.getElementById('packaging_en').value, packaging_th: document.getElementById('packaging_th').value,
-            keywords: document.getElementById('keywords').value, imageUrl: document.getElementById('imageUrl').value, isActive: document.getElementById('isActive').checked
+            keywords: document.getElementById('keywords').value, imageUrl: document.getElementById('imageUrl').value, isActive: document.getElementById('isActive').checked,
+            isArchived: false 
         };
         if (id) await updateDoc(doc(db, "products", id), data); else await addDoc(collection(db, "products"), data);
         document.getElementById('product-modal').classList.replace('flex', 'hidden'); showToast('Product saved!');
@@ -180,32 +215,16 @@ function setupEventListeners() {
         }
     });
 
-    // Suppliers
-    document.getElementById('add-supplier-btn')?.addEventListener('click', () => {
-        document.getElementById('supplier-form').reset(); document.getElementById('supplier-id').value = '';
-        document.getElementById('supplier-modal').classList.replace('hidden', 'flex');
-    });
-    document.getElementById('supplier-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('supplier-id').value;
-        const data = { name: document.getElementById('supplier-name').value };
-        if (id) await updateDoc(doc(db, "suppliers", id), data); else await addDoc(collection(db, "suppliers"), data);
-        document.getElementById('supplier-modal').classList.replace('flex', 'hidden'); showToast('Supplier saved!');
-    });
-    document.getElementById('suppliers-table-body')?.addEventListener('click', async (e) => {
-        const id = e.target.dataset.id;
-        if (e.target.classList.contains('edit-supplier-btn')) {
-            const s = allSuppliers.find(x => x.id === id);
-            document.getElementById('supplier-id').value = s.id; document.getElementById('supplier-name').value = s.name;
-            document.getElementById('supplier-modal').classList.replace('hidden', 'flex');
-        }
-        if (e.target.classList.contains('delete-supplier-btn') && confirm("Delete this supplier?")) {
-            await deleteDoc(doc(db, "suppliers", id)); showToast('Supplier deleted.');
-        }
-    });
-
-    // CSV Import / Export Logic
     setupCSVHandlers();
+
+    // ÉCOUTEUR SPA
+    window.addEventListener('branchContextChanged', (e) => {
+        showToast("Branch context updated");
+        renderProductsTable();
+        if (document.getElementById('suppliers-table-body')) {
+            renderSuppliersTable();
+        }
+    });
 }
 
 function setupCSVHandlers() {
@@ -242,13 +261,8 @@ function setupCSVHandlers() {
     }
 
     document.getElementById('export-product-btn')?.addEventListener('click', () => exportCSV(allProducts, ["name_en", "name_th", "product_reference", "supplier", "category_en", "category_th", "packaging_en", "packaging_th", "keywords", "imageUrl", "isActive"], 'products.csv'));
-    document.getElementById('export-supplier-btn')?.addEventListener('click', () => exportCSV(allSuppliers, ["name"], 'suppliers.csv'));
-    
     document.getElementById('import-product-btn')?.addEventListener('click', () => document.getElementById('csv-file-input').click());
-    document.getElementById('import-supplier-btn')?.addEventListener('click', () => document.getElementById('supplier-csv-input').click());
-    
     document.getElementById('csv-file-input')?.addEventListener('change', (e) => handleImport(e, 'products', ['name_en'], d => ({...d, isActive: d.isActive === 'true'})));
-    document.getElementById('supplier-csv-input')?.addEventListener('change', (e) => handleImport(e, 'suppliers', ['name'], d => d));
 }
 
 init();

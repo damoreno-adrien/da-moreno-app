@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supplier Profile - Da Moreno</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .lang-btn.active { background-color: #2563eb; color: white; }
+        .lang-btn:not(.active) { background-color: #e5e7eb; color: #374151; }
+        #toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 50; }
+        .toast { transform: translateX(120%); transition: transform 0.3s ease-in-out; }
+        .toast.show { transform: translateX(0); }
+    </style>
+</head>
+<body class="bg-gray-100 pb-12">
+
+    <div id="access-denied" class="hidden text-center p-8">
+        <h1 class="text-2xl font-bold text-red-600">Access Denied</h1>
+    </div>
+    
+    <div id="toast-container"></div>
+
+    <div id="app" class="max-w-5xl mx-auto p-4 sm:p-6 hidden">
+        
+        <!-- HEADER SPÉCIFIQUE POUR SOUS-PAGE (Détail) -->
+        <header class="mb-8 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            
+            <div class="flex items-center gap-3">
+                <a href="suppliers.html" class="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-colors" title="Back to Suppliers">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </a>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-800" id="header-supplier-name">Loading...</h1>
+            </div>
+
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <div id="lang-switcher" class="flex items-center text-sm font-medium border border-gray-300 rounded-lg p-1 bg-gray-50">
+                    <button data-lang="en" class="lang-btn px-2 py-1 rounded-md transition-colors">EN</button>
+                    <button data-lang="th" class="lang-btn px-2 py-1 rounded-md transition-colors">TH</button>
+                </div>
+                <button id="save-supplier-btn" class="flex-1 sm:flex-none bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-bold shadow-sm transition-colors" data-key="save_supplier">Save Profile</button>
+            </div>
+        </header>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8 relative">
+            <div class="absolute top-6 right-6 flex items-center gap-2 bg-gray-50 p-2 rounded-lg border">
+                <input type="checkbox" id="supplier-is-active" class="h-5 w-5 text-blue-600 rounded">
+                <label for="supplier-is-active" class="font-bold text-gray-700">Supplier is Active</label>
+            </div>
+
+            <form id="supplier-form" class="mt-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <section>
+                        <h3 class="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2" data-key="company_info">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg> Company Info
+                        </h3>
+                        <div class="space-y-4">
+                            <div><label class="block text-sm font-medium text-gray-700" data-key="name">Company Name</label><input type="text" id="comp-name" class="mt-1 w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500" required></div>
+                            <div><label class="block text-sm font-medium text-gray-700" data-key="email_address">Email Address</label><input type="email" id="comp-email" class="mt-1 w-full p-2 border rounded"></div>
+                            <div><label class="block text-sm font-medium text-gray-700" data-key="address">Address</label><textarea id="comp-address" class="mt-1 w-full p-2 border rounded" rows="2"></textarea></div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="block text-sm font-medium text-gray-700" data-key="phone_number">Phone Number</label><input type="text" id="comp-phone" class="mt-1 w-full p-2 border rounded"></div>
+                                <div><label class="block text-sm font-medium text-gray-700" data-key="line_id">LINE ID</label><input type="text" id="comp-line" class="mt-1 w-full p-2 border rounded"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold text-green-700 flex items-center gap-2" data-key="contact_person">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg> Contact Person
+                            </h3>
+                            <button type="button" id="same-as-company-btn" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300" data-key="same_as_company">Same as Company</button>
+                        </div>
+                        <div class="space-y-4">
+                            <div><label class="block text-sm font-medium text-gray-700" data-key="name">Contact Name</label><input type="text" id="contact-name" class="mt-1 w-full p-2 border rounded"></div>
+                            <div><label class="block text-sm font-medium text-gray-700" data-key="email_address">Email Address</label><input type="email" id="contact-email" class="mt-1 w-full p-2 border rounded"></div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="block text-sm font-medium text-gray-700" data-key="phone_number">Phone Number</label><input type="text" id="contact-phone" class="mt-1 w-full p-2 border rounded"></div>
+                                <div><label class="block text-sm font-medium text-gray-700" data-key="line_id">LINE ID</label><input type="text" id="contact-line" class="mt-1 w-full p-2 border rounded"></div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="mt-10 pt-6 border-t grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1" data-key="preferred_channel">Preferred Channel</label>
+                        <select id="pref-channel" class="w-full p-2 border rounded bg-gray-50">
+                            <option value="line">LINE</option>
+                            <option value="email">Email</option>
+                            <option value="phone">Phone</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1" data-key="payment_terms">Payment Terms</label>
+                        <select id="payment-terms" class="w-full p-2 border rounded bg-gray-50">
+                            <option value="POD">Pay On Delivery (POD)</option>
+                            <option value="7">7 Days</option>
+                            <option value="15">15 Days</option>
+                            <option value="30">30 Days</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <input type="text" id="payment-terms-other" class="mt-2 w-full p-2 border rounded hidden" data-key-placeholder="other_precise" placeholder="Other (precise)">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-sm font-bold text-gray-700 mb-1" data-key="notes">Notes</label>
+                        <textarea id="notes" class="w-full p-2 border rounded" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-3">
+                        <h3 class="text-xl font-bold text-purple-700 flex items-center gap-2" data-key="bank_details">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg> Bank Details
+                        </h3>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1" data-key="bank_name">Bank Name</label>
+                        <select id="bank-name" class="w-full p-2 border rounded bg-gray-50">
+                            <option value="" data-key="select_bank">Select Bank...</option>
+                            <option value="KBank">Kasikornbank (KBank)</option>
+                            <option value="SCB">Siam Commercial Bank (SCB)</option>
+                            <option value="BBL">Bangkok Bank (BBL)</option>
+                            <option value="KTB">Krungthai Bank (KTB)</option>
+                            <option value="Krungsri">Bank of Ayudhya (Krungsri)</option>
+                            <option value="TTB">TMBThanachart Bank (TTB)</option>
+                            <option value="GSB">Government Savings Bank (GSB)</option>
+                            <option value="UOB">United Overseas Bank (UOB)</option>
+                            <option value="CIMB">CIMB Thai Bank</option>
+                            <option value="other" data-key="other_bank">Other Bank</option>
+                        </select>
+                        <input type="text" id="bank-name-other" class="mt-2 w-full p-2 border rounded hidden" placeholder="Please specify">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1" data-key="account_name">Account Name</label>
+                        <input type="text" id="bank-account-name" class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1" data-key="account_number">Account Number</label>
+                        <input type="text" id="bank-account-number" class="w-full p-2 border rounded font-mono">
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4" data-key="products_supplied">Products Supplied</h2>
+            <div class="relative mb-4">
+                <input type="text" id="product-search" class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 bg-gray-50" placeholder="Search product...">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+            <div id="products-list" class="space-y-2 border rounded-lg p-2 max-h-96 overflow-y-auto">
+                <p class="text-center text-gray-500 py-4">Loading products...</p>
+            </div>
+        </div>
+
+        <div class="bg-red-50 p-6 rounded-xl shadow-sm border border-red-200 mb-8">
+            <h3 class="text-xl font-bold text-red-800 mb-2 flex items-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                Danger Zone
+            </h3>
+            <p class="text-sm text-red-600 mb-4">Actions below will affect this supplier and ALL its associated products.</p>
+            <div class="flex flex-wrap gap-4">
+                <button type="button" id="archive-supplier-btn" class="bg-orange-600 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-orange-700 transition-colors" data-action="archive">Archive Supplier</button>
+                <button type="button" id="delete-supplier-btn" class="bg-red-700 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-red-800 transition-colors hidden">Permanently Delete</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module" src="js/supplier-detail.js"></script>
+</body>
+</html>

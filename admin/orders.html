@@ -77,46 +77,83 @@
     <div id="toast-container"></div>
 
     <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 hidden">
-        <header class="mb-8">
-            <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-                <div>
-                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-800" data-key="order_processing">Order
-                        Processing</h1>
-                    <div id="branch-context-container"
-                        class="mt-3 hidden bg-blue-50 border border-blue-200 rounded-lg p-2 flex items-center gap-2 max-w-xs">
-                        <span class="text-sm font-medium text-blue-800" data-key="admin_branch_context">Active
-                            Branch:</span>
-                        <select id="global-branch-context-select"
-                            class="text-sm p-1 bg-white border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"></select>
-                    </div>
+        <header class="mb-8 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
+
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-800" data-key="page_title">Process Orders</h1>
+                    <span id="role-badge"
+                        class="hidden text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wide"></span>
                 </div>
-                <div class="w-full sm:w-auto flex flex-col sm:flex-row items-end sm:items-center gap-4">
-                    <p id="user-display" class="text-sm text-gray-600 w-full sm:w-auto text-right sm:text-left"></p>
-                    <div class="w-full sm:w-auto justify-between flex items-center gap-2">
+
+                <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-between xl:justify-end">
+                    <p id="user-display" class="text-sm font-medium text-gray-600 hidden 2xl:block truncate max-w-xs">
+                    </p>
+
+                    <div id="branch-context-container"
+                        class="hidden items-center bg-gray-50 border rounded-lg px-2 py-1 shrink-0 order-1">
+                        <span class="text-xs text-gray-500 mr-2 font-bold uppercase">Branch:</span>
+                        <select id="branch-context-select"
+                            class="bg-transparent text-sm font-bold text-blue-700 focus:outline-none">
+                            <option value="ALL">ALL BRANCHES</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-2 order-2 shrink-0 ml-auto xl:ml-0">
                         <div id="lang-switcher"
-                            class="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-lg p-1">
-                            <button data-lang="en" class="lang-btn px-2 py-1 rounded-md">EN</button>
-                            <button data-lang="th" class="lang-btn px-2 py-1 rounded-md">TH</button>
+                            class="flex items-center text-sm font-medium border border-gray-300 rounded-lg p-1 bg-white">
+                            <button data-lang="en" class="lang-btn px-2 py-1 rounded-md transition-colors">EN</button>
+                            <button data-lang="th" class="lang-btn px-2 py-1 rounded-md transition-colors">TH</button>
                         </div>
-                        <div class="hidden sm:flex items-center gap-2">
-                            <a href="../index.html"
-                                class="justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm"
-                                data-key="create_order">Create Order</a>
-                            <a href="../my-orders.html"
-                                class="justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 text-sm"
-                                data-key="my_orders">My Orders</a>
-                            <button id="logout-btn"
-                                class="justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
-                                data-key="logout">Logout</button>
-                        </div>
+                        <button id="logout-btn"
+                            class="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg text-sm font-semibold transition-colors"
+                            data-key="logout">Logout</button>
+                    </div>
+
+                    <div class="flex w-full xl:w-auto items-center gap-2 shrink-0 order-3 mt-1 xl:mt-0">
+                        <a href="../index.html"
+                            class="flex-1 xl:flex-none text-center px-3 py-2 xl:py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm font-semibold transition-colors shadow-sm whitespace-nowrap"
+                            data-key="create_order">Create Order</a>
+                        <a href="../my-orders.html"
+                            class="flex-1 xl:flex-none text-center px-3 py-2 xl:py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 text-sm font-semibold transition-colors bg-white shadow-sm whitespace-nowrap"
+                            data-key="my_orders">My Orders</a>
                     </div>
                 </div>
             </div>
 
-            <nav class="mt-6 border-b flex gap-6 text-gray-500">
-                <a href="orders.html" class="nav-link active py-3" data-key="order_processing">Orders</a>
-                <a href="catalog.html" class="nav-link py-3 hover:text-blue-600" data-key="catalog">Catalog</a>
-                <a href="organization.html" class="nav-link py-3 hover:text-blue-600">Organization</a>
+            <nav
+                class="mt-6 flex gap-1 sm:gap-4 text-sm sm:text-base font-medium text-gray-500 overflow-x-auto pb-2 scrollbar-hide w-full border-b">
+
+                <a href="orders.html"
+                    class="nav-link active text-blue-600 border-b-2 border-blue-600 py-2 px-3 bg-blue-50/50 rounded-t-lg whitespace-nowrap"
+                    data-key="order_processing">
+                    Orders
+                    <span id="pending-orders-badge"
+                        class="hidden absolute top-0 -right-1 bg-red-500 text-white text-[10px] font-bold h-4 min-w-[16px] px-1 flex items-center justify-center rounded-full shadow-sm animate-pulse"></span>
+                </a>
+
+                <a href="catalog.html"
+                    class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors"
+                    data-key="catalog">Catalog</a>
+
+                <a href="suppliers.html"
+                    class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors"
+                    data-key="supplier_management">Suppliers</a>
+
+                <a href="organization.html"
+                    class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors">Organization</a>
+
+                <a href="admin-panel.html" id="admin-link"
+                    class="hidden nav-link whitespace-nowrap py-2 px-3 text-purple-600 hover:bg-purple-50 rounded-t-lg transition-colors items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Settings
+                </a>
             </nav>
         </header>
 

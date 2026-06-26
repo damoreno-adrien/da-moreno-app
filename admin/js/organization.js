@@ -92,6 +92,24 @@ function filterDepartmentsByBranch(branchId, selectedDeptId = null) {
     });
 }
 
+// Fonction de sécurité pour le formulaire Staff
+function restrictRoleSelection() {
+    const roleSelect = document.getElementById('staff-role-select');
+    if (roleSelect) {
+        Array.from(roleSelect.options).forEach(opt => {
+            // Si on n'est pas superadmin, on bloque les options "admin" et "superadmin"
+            if (opt.value === 'superadmin' || opt.value === 'admin') {
+                opt.disabled = (currentUserRole !== 'superadmin');
+                opt.hidden = (currentUserRole !== 'superadmin');
+            }
+        });
+        // On force la valeur sur 'staff' si un simple Admin essaie d'ouvrir un ajout vierge
+        if (currentUserRole !== 'superadmin' && (roleSelect.value === 'superadmin' || roleSelect.value === 'admin')) {
+            roleSelect.value = 'staff';
+        }
+    }
+}
+
 // --- Render Tables ---
 function renderBranchesTable() {
     const tbody = document.getElementById('branches-table-body');
@@ -129,15 +147,24 @@ function renderStaffTable() {
         const dept = allDepartments.find(d => d.id === staff.departmentId);
         const branchName = allBranches.find(b => b.id === staff.branchId)?.name || 'N/A';
         
+        let actionButtons = '';
+        // Sécurité de modification dans le tableau
+        if (currentUserRole === 'superadmin' || (staff.role !== 'superadmin' && staff.role !== 'admin')) {
+            actionButtons = `
+                <button data-id="${staff.id}" class="edit-staff-btn text-blue-600 hover:underline mr-2">Edit</button>
+                <button data-id="${staff.id}" class="delete-staff-btn text-red-600 hover:underline">Delete</button>
+            `;
+        } else {
+            // Un Admin ne peut pas modifier un autre Admin ou Superadmin
+            actionButtons = `<span class="text-xs text-gray-400 font-bold uppercase">Restricted</span>`;
+        }
+
         tbody.insertAdjacentHTML('beforeend', `
             <tr class="border-b hover:bg-gray-50">
                 <td class="table-cell font-medium">${staff.name || 'N/A'}</td>
                 <td class="table-cell text-gray-600">${dept ? dept[`name_${currentLang}`] || dept.name_en : 'N/A'}</td>
                 <td class="table-cell text-sm text-gray-500">${branchName}</td>
-                <td class="table-cell">
-                    <button data-id="${staff.id}" class="edit-staff-btn text-blue-600 hover:underline mr-2">Edit</button>
-                    <button data-id="${staff.id}" class="delete-staff-btn text-red-600 hover:underline">Delete</button>
-                </td>
+                <td class="table-cell">${actionButtons}</td>
             </tr>
         `);
     });
@@ -235,6 +262,10 @@ function setupEventListeners() {
     document.getElementById('add-staff-btn')?.addEventListener('click', () => {
         document.getElementById('staff-form').reset(); document.getElementById('staff-id').value = '';
         document.getElementById('staff-uid').readOnly = false;
+        
+        // --- Sécurité ---
+        restrictRoleSelection();
+        
         document.getElementById('staff-branch-select').disabled = currentUserRole === 'admin';
         document.getElementById('staff-branch-select').value = currentUserRole === 'admin' ? currentUserBranchId : (allBranches[0]?.id || '');
         filterDepartmentsByBranch(document.getElementById('staff-branch-select').value);
@@ -257,14 +288,29 @@ function setupEventListeners() {
         const id = e.target.dataset.id;
         if (e.target.classList.contains('edit-staff-btn')) {
             const s = allStaff.find(x => x.id === id);
+            
+            // Sécurité anti-triche via manipulation HTML
+            if (currentUserRole !== 'superadmin' && (s.role === 'admin' || s.role === 'superadmin')) {
+                showToast("Action restricted.", true);
+                return;
+            }
+
             document.getElementById('staff-id').value = s.id; document.getElementById('staff-uid').value = s.id;
             document.getElementById('staff-uid').readOnly = true; document.getElementById('staff-name').value = s.name;
+            
+            // --- Sécurité ---
+            restrictRoleSelection();
+            
             document.getElementById('staff-role-select').value = s.role; document.getElementById('staff-branch-select').value = s.branchId;
             document.getElementById('staff-branch-select').disabled = currentUserRole === 'admin';
             filterDepartmentsByBranch(s.branchId, s.departmentId);
             document.getElementById('staff-modal').classList.replace('hidden', 'flex');
         }
         if (e.target.classList.contains('delete-staff-btn') && confirm("Remove staff from app?")) {
+            const s = allStaff.find(x => x.id === id);
+            if (currentUserRole !== 'superadmin' && (s.role === 'admin' || s.role === 'superadmin')) {
+                return showToast("Action restricted.", true);
+            }
             await deleteDoc(doc(db, "users", id)); showToast('Staff removed.');
         }
     });
@@ -300,6 +346,14 @@ function setupEventListeners() {
             await deleteDoc(doc(db, "departments", id)); showToast('Department deleted.');
         }
     });
+    
+    // Écoute le changement de succursale pour un rendu instantané
+    window.addEventListener('branchContextChanged', (e) => {
+        showToast("Branch context updated");
+        renderStaffTable();
+        renderDepartmentsTable();
+        renderBranchesTable();
+    }); 
 }
 
 init();

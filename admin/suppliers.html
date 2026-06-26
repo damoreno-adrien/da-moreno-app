@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suppliers - Da Moreno Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .table-cell {
+            padding: 12px 16px;
+            white-space: nowrap;
+        }
+
+        .lang-btn.active {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .lang-btn:not(.active) {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+
+        .nav-link.active {
+            border-bottom: 2px solid #2563eb;
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        #toast-container {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            z-index: 50;
+        }
+
+        .toast {
+            transform: translateX(120%);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .exporting .copy-btn {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+
+    <div id="access-denied" class="hidden text-center p-8">
+        <h1 class="text-2xl font-bold text-red-600">Access Denied</h1>
+        <p class="text-gray-700">Redirecting...</p>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 hidden">
+        <header class="mb-8 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
+
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-800" data-key="page_title">Suppliers</h1>
+                    <span id="role-badge"
+                        class="hidden text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wide"></span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-between xl:justify-end">
+                    <p id="user-display" class="text-sm font-medium text-gray-600 hidden 2xl:block truncate max-w-xs">
+                    </p>
+
+                    <div id="branch-context-container"
+                        class="hidden items-center bg-gray-50 border rounded-lg px-2 py-1 shrink-0 order-1">
+                        <span class="text-xs text-gray-500 mr-2 font-bold uppercase">Branch:</span>
+                        <select id="branch-context-select"
+                            class="bg-transparent text-sm font-bold text-blue-700 focus:outline-none">
+                            <option value="ALL">ALL BRANCHES</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-2 order-2 shrink-0 ml-auto xl:ml-0">
+                        <div id="lang-switcher"
+                            class="flex items-center text-sm font-medium border border-gray-300 rounded-lg p-1 bg-white">
+                            <button data-lang="en" class="lang-btn px-2 py-1 rounded-md transition-colors">EN</button>
+                            <button data-lang="th" class="lang-btn px-2 py-1 rounded-md transition-colors">TH</button>
+                        </div>
+                        <button id="logout-btn"
+                            class="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg text-sm font-semibold transition-colors"
+                            data-key="logout">Logout</button>
+                    </div>
+
+                    <div class="flex w-full xl:w-auto items-center gap-2 shrink-0 order-3 mt-1 xl:mt-0">
+                        <a href="../index.html"
+                            class="flex-1 xl:flex-none text-center px-3 py-2 xl:py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm font-semibold transition-colors shadow-sm whitespace-nowrap"
+                            data-key="create_order">Create Order</a>
+                        <a href="../my-orders.html"
+                            class="flex-1 xl:flex-none text-center px-3 py-2 xl:py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 text-sm font-semibold transition-colors bg-white shadow-sm whitespace-nowrap"
+                            data-key="my_orders">My Orders</a>
+                    </div>
+                </div>
+            </div>
+
+            <nav
+                class="mt-6 flex gap-1 sm:gap-4 text-sm sm:text-base font-medium text-gray-500 overflow-x-auto pb-2 scrollbar-hide w-full border-b">
+
+                <a href="orders.html"
+                    class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors"
+                    data-key="order_processing">
+                    Orders
+                    <span id="pending-orders-badge"
+                        class="hidden absolute top-0 -right-1 bg-red-500 text-white text-[10px] font-bold h-4 min-w-[16px] px-1 flex items-center justify-center rounded-full shadow-sm animate-pulse"></span>
+                </a>
+
+                <a href="catalog.html"
+                    class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors"
+                    data-key="catalog">Catalog</a>
+
+                <a href="suppliers.html"
+                    class="nav-link active text-blue-600 border-b-2 border-blue-600 py-2 px-3 bg-blue-50/50 rounded-t-lg whitespace-nowrap"
+                    data-key="supplier_management">Suppliers</a>
+
+                <a href="organization.html"
+                    class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors">Organization</a>
+
+                <a href="admin-panel.html" id="admin-link"
+                    class="hidden nav-link whitespace-nowrap py-2 px-3 text-purple-600 hover:bg-purple-50 rounded-t-lg transition-colors items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Settings
+                </a>
+            </nav>
+        </header>
+
+        <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800" data-key="all_suppliers">All Suppliers</h2>
+                <button id="add-supplier-btn"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-sm"
+                    data-key="add_new_supplier">+ Add Supplier</button>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                <div class="relative w-full sm:w-auto flex-grow">
+                    <input type="text" id="supplier-search"
+                        class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 bg-gray-50"
+                        placeholder="Search suppliers (Name, Contact, Email, Phone)...">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                <div class="flex items-center shrink-0">
+                    <input type="checkbox" id="show-archived" class="h-4 w-4 text-blue-600 rounded mr-2 cursor-pointer">
+                    <label for="show-archived" class="text-sm font-medium text-gray-700 cursor-pointer">Show
+                        Archived</label>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="table-cell text-left font-semibold text-gray-600 cursor-pointer sort-header hover:bg-gray-300"
+                                data-sort="name"><span data-key="name">Name</span> ↕️</th>
+                            <th class="table-cell text-left font-semibold text-gray-600 cursor-pointer sort-header hover:bg-gray-300"
+                                data-sort="contactName"><span data-key="contact_person">Contact</span> ↕️</th>
+                            <th class="table-cell text-center font-semibold text-gray-600" data-key="status">Status</th>
+                            <th class="table-cell text-center font-semibold text-gray-600" data-key="products_supplied">
+                                Products (Active/Total)</th>
+                            <th class="table-cell text-right font-semibold text-gray-600" data-key="actions">Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="suppliers-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="supplier-view-modal"
+        class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
+            <div class="flex justify-between items-center p-4 border-b bg-gray-50">
+                <h2 class="text-xl font-bold text-gray-800">Supplier Card</h2>
+                <div class="flex items-center gap-4">
+                    <button id="modal-export-btn"
+                        class="text-sm bg-gray-800 text-white px-3 py-1.5 rounded-lg hover:bg-gray-900 flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg> Save as JPG
+                    </button>
+                    <button class="close-view-modal text-gray-500 text-2xl px-2 hover:text-red-500">&times;</button>
+                </div>
+            </div>
+
+            <div id="printable-supplier-card" class="p-8 bg-white relative">
+                <div class="border-b-2 border-blue-600 pb-4 mb-6">
+                    <h1 id="qv-name" class="text-3xl font-bold text-gray-900 mb-1">-</h1>
+                    <div class="flex items-center group">
+                        <p id="qv-email" class="text-gray-500">-</p>
+                        <button class="copy-btn ml-2 text-gray-300 hover:text-blue-600 hidden group-hover:block"
+                            data-target="qv-email">📋</button>
+                    </div>
+                </div>
+
+                <div class="space-y-5">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Contact Person</p>
+                            <div class="flex items-center group">
+                                <p id="qv-contact" class="font-medium text-gray-800">-</p>
+                                <button class="copy-btn ml-2 text-gray-300 hover:text-blue-600 hidden group-hover:block"
+                                    data-target="qv-contact">📋</button>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Phone</p>
+                            <div class="flex items-center group">
+                                <p id="qv-phone" class="font-medium text-gray-800">-</p>
+                                <button class="copy-btn ml-2 text-gray-300 hover:text-blue-600 hidden group-hover:block"
+                                    data-target="qv-phone">📋</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">LINE ID</p>
+                        <div class="flex items-center group">
+                            <p id="qv-line" class="font-medium text-gray-800">-</p>
+                            <button class="copy-btn ml-2 text-gray-300 hover:text-blue-600 hidden group-hover:block"
+                                data-target="qv-line">📋</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                        <p class="text-xs text-purple-500 uppercase tracking-wider font-bold mb-2">Bank Details</p>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <span class="text-gray-500">Bank:</span>
+                            <div class="flex items-center group">
+                                <span id="qv-bank-name" class="font-medium text-gray-800">-</span>
+                            </div>
+                            <span class="text-gray-500">Account:</span>
+                            <div class="flex items-center group">
+                                <span id="qv-bank-account" class="font-medium font-mono text-gray-800">-</span>
+                                <button class="copy-btn ml-2 text-gray-300 hover:text-blue-600 hidden group-hover:block"
+                                    data-target="qv-bank-account">📋</button>
+                            </div>
+                            <span class="text-gray-500">Name:</span>
+                            <div class="flex items-center group">
+                                <span id="qv-bank-holder" class="font-medium text-gray-800">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/suppliers.js"></script>
+</body>
+
+</html>
