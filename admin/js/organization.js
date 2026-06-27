@@ -97,13 +97,11 @@ function restrictRoleSelection() {
     const roleSelect = document.getElementById('staff-role-select');
     if (roleSelect) {
         Array.from(roleSelect.options).forEach(opt => {
-            // Si on n'est pas superadmin, on bloque les options "admin" et "superadmin"
             if (opt.value === 'superadmin' || opt.value === 'admin') {
                 opt.disabled = (currentUserRole !== 'superadmin');
                 opt.hidden = (currentUserRole !== 'superadmin');
             }
         });
-        // On force la valeur sur 'staff' si un simple Admin essaie d'ouvrir un ajout vierge
         if (currentUserRole !== 'superadmin' && (roleSelect.value === 'superadmin' || roleSelect.value === 'admin')) {
             roleSelect.value = 'staff';
         }
@@ -118,8 +116,8 @@ function renderBranchesTable() {
     allBranches.forEach(branch => {
         tbody.insertAdjacentHTML('beforeend', `
             <tr class="border-b hover:bg-gray-50">
-                <td class="table-cell text-gray-500 font-mono text-xs">${branch.id}</td>
                 <td class="table-cell font-medium">${branch.name}</td>
+                <td class="table-cell text-gray-600 text-sm">${branch.companyName || '-'}</td>
                 <td class="table-cell">
                     <button data-id="${branch.id}" class="edit-branch-btn text-blue-600 hover:underline mr-2">Edit</button>
                     <button data-id="${branch.id}" class="delete-branch-btn text-red-600 hover:underline">Delete</button>
@@ -148,14 +146,12 @@ function renderStaffTable() {
         const branchName = allBranches.find(b => b.id === staff.branchId)?.name || 'N/A';
         
         let actionButtons = '';
-        // Sécurité de modification dans le tableau
         if (currentUserRole === 'superadmin' || (staff.role !== 'superadmin' && staff.role !== 'admin')) {
             actionButtons = `
                 <button data-id="${staff.id}" class="edit-staff-btn text-blue-600 hover:underline mr-2">Edit</button>
                 <button data-id="${staff.id}" class="delete-staff-btn text-red-600 hover:underline">Delete</button>
             `;
         } else {
-            // Un Admin ne peut pas modifier un autre Admin ou Superadmin
             actionButtons = `<span class="text-xs text-gray-400 font-bold uppercase">Restricted</span>`;
         }
 
@@ -234,13 +230,17 @@ function setupEventListeners() {
 
     // Branch Events
     document.getElementById('add-branch-btn')?.addEventListener('click', () => {
-        document.getElementById('branch-form').reset(); document.getElementById('branch-id').value = '';
+        document.getElementById('branch-form').reset(); 
+        document.getElementById('branch-id').value = '';
         document.getElementById('branch-modal').classList.replace('hidden', 'flex');
     });
     document.getElementById('branch-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = document.getElementById('branch-id').value;
-        const data = { name: document.getElementById('branch-name').value };
+        const data = { 
+            name: document.getElementById('branch-name').value,
+            companyName: document.getElementById('branch-company-name').value // Ajout du Company Name
+        };
         if (id) await updateDoc(doc(db, "branches", id), data); else await addDoc(collection(db, "branches"), data);
         document.getElementById('branch-modal').classList.replace('flex', 'hidden');
         showToast('Branch saved!');
@@ -249,7 +249,9 @@ function setupEventListeners() {
         const id = e.target.dataset.id;
         if (e.target.classList.contains('edit-branch-btn')) {
             const b = allBranches.find(x => x.id === id);
-            document.getElementById('branch-id').value = b.id; document.getElementById('branch-name').value = b.name;
+            document.getElementById('branch-id').value = b.id; 
+            document.getElementById('branch-name').value = b.name;
+            document.getElementById('branch-company-name').value = b.companyName || ''; // Remplissage
             document.getElementById('branch-modal').classList.replace('hidden', 'flex');
         }
         if (e.target.classList.contains('delete-branch-btn') && confirm("Delete this branch?")) {
@@ -263,7 +265,6 @@ function setupEventListeners() {
         document.getElementById('staff-form').reset(); document.getElementById('staff-id').value = '';
         document.getElementById('staff-uid').readOnly = false;
         
-        // --- Sécurité ---
         restrictRoleSelection();
         
         document.getElementById('staff-branch-select').disabled = currentUserRole === 'admin';
@@ -289,7 +290,6 @@ function setupEventListeners() {
         if (e.target.classList.contains('edit-staff-btn')) {
             const s = allStaff.find(x => x.id === id);
             
-            // Sécurité anti-triche via manipulation HTML
             if (currentUserRole !== 'superadmin' && (s.role === 'admin' || s.role === 'superadmin')) {
                 showToast("Action restricted.", true);
                 return;
@@ -298,7 +298,6 @@ function setupEventListeners() {
             document.getElementById('staff-id').value = s.id; document.getElementById('staff-uid').value = s.id;
             document.getElementById('staff-uid').readOnly = true; document.getElementById('staff-name').value = s.name;
             
-            // --- Sécurité ---
             restrictRoleSelection();
             
             document.getElementById('staff-role-select').value = s.role; document.getElementById('staff-branch-select').value = s.branchId;
@@ -347,7 +346,6 @@ function setupEventListeners() {
         }
     });
     
-    // Écoute le changement de succursale pour un rendu instantané
     window.addEventListener('branchContextChanged', (e) => {
         showToast("Branch context updated");
         renderStaffTable();

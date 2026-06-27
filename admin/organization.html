@@ -167,9 +167,9 @@
                 <table class="min-w-full bg-white">
                     <thead class="bg-gray-200">
                         <tr>
-                            <th class="table-cell text-left font-semibold text-gray-600">ID</th>
-                            <th class="table-cell text-left font-semibold text-gray-600" data-key="name">Name</th>
-                            <th class="table-cell text-left font-semibold text-gray-600" data-key="actions">Actions</th>
+                            <th class="table-cell text-left font-semibold text-gray-600">Branch Name</th>
+                            <th class="table-cell text-left font-semibold text-gray-600">Company Name</th>
+                            <th class="table-cell text-left font-semibold text-gray-600">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="branches-table-body"></tbody>
@@ -269,8 +269,12 @@
                 <form id="branch-form" class="space-y-4">
                     <input type="hidden" id="branch-id">
                     <div>
-                        <label class="block font-medium mb-1" data-key="name">Name</label>
-                        <input type="text" id="branch-name" class="w-full p-2 border rounded" required>
+                        <label class="block text-sm font-medium text-gray-700">Commercial Name (Branch)</label>
+                        <input type="text" id="branch-name" class="mt-1 w-full p-2 border rounded" required>
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700">Legal Company Name</label>
+                        <input type="text" id="branch-company-name" class="mt-1 w-full p-2 border rounded" required>
                     </div>
                 </form>
             </div>

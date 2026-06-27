@@ -10,7 +10,7 @@ const itemsPerPage = 10;
 let currentEditingOrder = { id: null, items: [] };
 let historySortBy = 'date';
 let historySortDesc = true;
-let replaceTargetProductId = null; // Pour la modale de remplacement
+let replaceTargetProductId = null; 
 
 function init() {
     setupLangSwitcher(() => { renderPendingOrders(); renderOrderHistory(); });
@@ -30,7 +30,6 @@ function init() {
     });
 }
 
-// --- Fetch Data ---
 function fetchAllBranches() {
     onSnapshot(collection(db, "branches"), (snapshot) => {
         allBranches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -69,7 +68,6 @@ function fetchProcessedOrders() {
     });
 }
 
-// --- Renders ---
 function renderPendingOrders() {
     const list = document.getElementById('pending-orders-list');
     const branchContext = currentUserRole === 'admin' ? currentUserBranchId : activeBranchContext;
@@ -83,7 +81,6 @@ function renderPendingOrders() {
     }
     document.getElementById('generate-list-btn').disabled = false;
 
-    // Grouping by Branch -> Department -> User
     const ordersHierarchy = filteredOrders.reduce((acc, order) => {
         const branch = allBranches.find(b => b.id === order.branchId);
         const branchName = branch ? branch.name : 'Unknown Branch';
@@ -150,11 +147,16 @@ function generateSupplierList() {
     for (const orderId in selectedData) {
         const order = pendingOrders.find(o => o.id === orderId);
         if (!order) continue;
-        const branchName = allBranches.find(b => b.id === order.branchId)?.name || 'Unknown Branch';
+        const branchObj = allBranches.find(b => b.id === order.branchId);
+        
+        // C'EST ICI QUE L'ON CRÉE LA CHAÎNE DE CARACTÈRES AVEC LE COMPANY NAME
+        const branchFormattedName = branchObj 
+            ? `${branchObj.name} - ${branchObj.companyName || 'No Company Name'}` 
+            : 'Unknown Branch';
 
         order.items.filter(i => selectedData[orderId].includes(i.productId)).forEach(item => {
             const key = item.productId + '_' + order.branchId;
-            if (!mergedItems[key]) mergedItems[key] = { ...item, branchName, quantity: 0 };
+            if (!mergedItems[key]) mergedItems[key] = { ...item, branchFormattedName, quantity: 0 };
             mergedItems[key].quantity += item.quantity;
         });
     }
@@ -162,8 +164,8 @@ function generateSupplierList() {
     const sortedBySupplier = Object.values(mergedItems).reduce((acc, item) => {
         const supplier = allSuppliers.find(s => s.id === item.supplier)?.name || 'Uncategorized';
         if (!acc[supplier]) acc[supplier] = {};
-        if (!acc[supplier][item.branchName]) acc[supplier][item.branchName] = [];
-        acc[supplier][item.branchName].push(item);
+        if (!acc[supplier][item.branchFormattedName]) acc[supplier][item.branchFormattedName] = [];
+        acc[supplier][item.branchFormattedName].push(item);
         return acc;
     }, {});
 
@@ -188,11 +190,12 @@ function generateSupplierList() {
                     </button>
                 </div>`;
 
-        for (const branch in sortedBySupplier[supplier]) {
-            html += `<h5 class="font-semibold text-blue-700 mt-2 mb-1 flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> ${branch}</h5>`;
+        for (const branchName in sortedBySupplier[supplier]) {
+            // Affichage du nom formaté [Commercial Name - Company Name]
+            html += `<h5 class="font-semibold text-blue-700 mt-2 mb-1 flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> ${branchName}</h5>`;
             html += `<ul class="space-y-1 font-mono text-sm text-gray-700 supplier-items-list mb-3 pl-2 border-l-2 border-blue-200">`;
 
-            sortedBySupplier[supplier][branch].sort((a, b) => (a.productRef || '').localeCompare(b.productRef || '')).forEach(item => {
+            sortedBySupplier[supplier][branchName].sort((a, b) => (a.productRef || '').localeCompare(b.productRef || '')).forEach(item => {
                 html += `<li data-raw-text="${item.productRef || 'NO-REF'} - ${item[`productName_${currentLang}`] || item.productName}: ${item.quantity} ${item[`packaging_${currentLang}`] || item.packaging || 'unit'}(s)">
                             <span class="font-bold text-blue-600">${item.productRef || 'NO-REF'}</span> - ${item[`productName_${currentLang}`] || item.productName}: <span class="font-bold bg-gray-100 px-1 rounded">${item.quantity}</span> ${item[`packaging_${currentLang}`] || item.packaging || 'unit'}(s)
                         </li>`;
@@ -203,7 +206,6 @@ function generateSupplierList() {
     }
     container.innerHTML = html;
     container.classList.remove('hidden');
-
     container.dataset.selectedDataMap = JSON.stringify(selectedData);
 }
 
@@ -212,7 +214,6 @@ function renderOrderHistory() {
     const branchContext = currentUserRole === 'admin' ? currentUserBranchId : activeBranchContext;
     let filteredHistory = processedOrders.filter(o => branchContext === 'ALL' || o.branchId === branchContext);
 
-    // Application des filtres de Date
     const startInput = document.getElementById('history-start-date').value;
     const endInput = document.getElementById('history-end-date').value;
 
@@ -225,7 +226,6 @@ function renderOrderHistory() {
         filteredHistory = filteredHistory.filter(o => o.createdAt && o.createdAt.toMillis() <= end);
     }
 
-    // Application du Tri
     filteredHistory.sort((a, b) => {
         let valA, valB;
         if (historySortBy === 'date') { valA = a.createdAt?.toMillis() || 0; valB = b.createdAt?.toMillis() || 0; }
@@ -284,7 +284,6 @@ function handleCheckboxes() {
     }
 }
 
-// --- Injection Manuelle & Remplacement ---
 function setupSearchInputs() {
     const modal = document.getElementById('admin-add-order-modal');
     const staffSelect = document.getElementById('admin-order-staff-select');
@@ -315,7 +314,6 @@ function setupSearchInputs() {
         }
     });
 
-    // Fonction d'aide pour uniformiser l'affichage des résultats (Inactifs & Fournisseur)
     const renderSearchResult = (p, container, onClickCallback) => {
         const div = document.createElement('div');
         const supplierName = allSuppliers.find(s => s.id === p.supplier)?.name || 'N/A';
@@ -334,7 +332,6 @@ function setupSearchInputs() {
         container.appendChild(div);
     };
 
-    // Recherche Injection
     searchInput?.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         resultsDiv.innerHTML = '';
@@ -377,7 +374,6 @@ function setupSearchInputs() {
         } catch (err) { showToast("Error adding line", true); }
     });
 
-    // Recherche Remplacement
     const replaceInput = document.getElementById('replace-product-search');
     const replaceResults = document.getElementById('replace-product-results');
 
@@ -406,7 +402,6 @@ function setupSearchInputs() {
     });
 }
 
-// --- Order Edit / Copy ---
 function renderEditOrderModal() {
     const container = document.getElementById('edit-order-items-container');
     container.innerHTML = '';
@@ -466,7 +461,6 @@ async function markOrdersAsProcessed() {
     }
 }
 
-// --- Listeners ---
 function setupEventListeners() {
     document.getElementById('global-branch-context-select')?.addEventListener('change', (e) => {
         setActiveBranchContext(e.target.value);
@@ -512,6 +506,7 @@ function setupEventListeners() {
 
     document.getElementById('generate-list-btn').addEventListener('click', generateSupplierList);
 
+    // LOGIQUE DE COPIE AVEC LE NOUVEAU FORMAT
     document.getElementById('supplier-list-container').addEventListener('click', (e) => {
         if (e.target.id === 'mark-processed-btn') return markOrdersAsProcessed();
 
@@ -519,9 +514,9 @@ function setupEventListeners() {
         if (copyBtn) {
             const block = copyBtn.closest('.supplier-block');
             const branchHeaders = Array.from(block.querySelectorAll('h5'));
-            let textToCopy = `=== ${block.dataset.supplierName} ===\n\n`;
+            let textToCopy = `*${block.dataset.supplierName}*\n`;
             branchHeaders.forEach(h5 => {
-                textToCopy += `[${h5.textContent.trim()}]\n`;
+                textToCopy += `${h5.textContent.trim()}\n\n`;
                 const items = Array.from(h5.nextElementSibling.querySelectorAll('li')).map(li => li.dataset.rawText);
                 textToCopy += items.join('\n') + `\n\n`;
             });
