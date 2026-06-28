@@ -326,33 +326,72 @@
                 <button class="close-modal text-gray-500 text-3xl">&times;</button>
             </div>
             <div class="p-6">
-                <form id="staff-form" class="space-y-4">
+                <form id="staff-form" class="mt-4">
                     <input type="hidden" id="staff-id">
-                    <div>
-                        <label class="block font-medium mb-1" data-key="user_auth_uid">User Auth UID</label>
-                        <p class="text-xs text-gray-500 mb-1" data-key="user_auth_uid_subtitle">Create login in Firebase
-                            Auth first, then paste the UID here.</p>
-                        <input type="text" id="staff-uid" class="w-full p-2 border rounded bg-gray-50" required>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">User Auth UID</label>
+                        <input type="text" id="staff-uid" class="w-full p-2 border rounded bg-gray-50 font-mono text-sm"
+                            placeholder="Paste Firebase Auth UID" required>
+                        <p class="text-xs text-gray-500 mt-1">Must match the UID from Firebase Authentication</p>
                     </div>
-                    <div>
-                        <label class="block font-medium mb-1" data-key="name">Name</label>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                         <input type="text" id="staff-name" class="w-full p-2 border rounded" required>
                     </div>
-                    <div>
-                        <label class="block font-medium mb-1" data-key="role">Role</label>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
                         <select id="staff-role-select" class="w-full p-2 border rounded" required>
-                            <option value="staff">Staff (Basic App Access)</option>
-                            <option value="admin">Admin (Branch Access)</option>
-                            <option value="superadmin">SuperAdmin (Full Access)</option>
+                            <option value="staff">Staff (Front App Only)</option>
+                            <option value="admin">Admin (Branch Manager)</option>
+                            <option value="superadmin">Superadmin (Global Access)</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block font-medium mb-1" data-key="branch">Branch</label>
-                        <select id="staff-branch-select" class="w-full p-2 border rounded" required></select>
+
+                    <!-- NOUVEAU: Sélection multiple de succursales -->
+                    <div class="mb-4 border-t pt-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Assign Branches</label>
+                        <div id="staff-branch-checkboxes"
+                            class="grid grid-cols-2 gap-3 max-h-32 overflow-y-auto p-2 bg-white border rounded">
+                            <!-- Les cases à cocher seront générées ici par organization.js -->
+                        </div>
                     </div>
-                    <div>
-                        <label class="block font-medium mb-1" data-key="department">Department</label>
-                        <select id="staff-department-select" class="w-full p-2 border rounded" required></select>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Primary Department</label>
+                        <select id="staff-department-select" class="w-full p-2 border rounded bg-gray-50" required>
+                            <option value="">Select branches first...</option>
+                        </select>
+                    </div>
+
+                    <!-- NOUVEAU: Permissions / Attributs (Flags) -->
+                    <div class="mb-6 border-t pt-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2" data-key="extra_permissions">Extra
+                            Permissions</label>
+                        <div class="flex flex-col gap-2 bg-gray-50 p-3 rounded border">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="perm-process" class="w-4 h-4 rounded text-blue-600">
+                                <span class="text-sm font-medium text-gray-800" data-key="can_process_orders">Can
+                                    Process Orders (Admin Panel)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="perm-receive" class="w-4 h-4 rounded text-blue-600">
+                                <span class="text-sm font-medium text-gray-800" data-key="can_receive_orders">Can
+                                    Receive Orders (Front-End)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="perm-pay" class="w-4 h-4 rounded text-blue-600">
+                                <span class="text-sm font-medium text-gray-800" data-key="can_manage_payments">Can
+                                    Manage Payments (Accounting)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2">
+                        <button type="button"
+                            class="close-modal bg-gray-200 px-4 py-2 rounded text-gray-700 font-medium hover:bg-gray-300">Cancel</button>
+                        <button type="submit"
+                            class="bg-blue-600 px-4 py-2 rounded text-white font-medium hover:bg-blue-700">Save
+                            Staff</button>
                     </div>
                 </form>
             </div>

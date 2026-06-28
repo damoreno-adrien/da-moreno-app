@@ -1,19 +1,15 @@
 import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, writeBatch, addDoc, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db } from "../../js/config.js";
-import { initAuth, currentUserRole, currentUserBranchId, activeBranchContext, setActiveBranchContext, setupLogout } from "../../js/auth.js";
+import { initAuth, currentUser, currentUserRole, currentUserAccessibleBranches, currentUserBranchId, activeBranchContext, setActiveBranchContext, setupLogout } from "../../js/auth.js";
 import { setLanguage, setupLangSwitcher, translations, currentLang } from "../../js/i18n.js";
-import { showToast, renderPagination, setupMobileMenu, formatDate } from "../../js/ui.js";
+import { showToast, setupMobileMenu, formatDate } from "../../js/ui.js";
 
 let pendingOrders = [], processedOrders = [], allStaff = [], allDepartments = [], allSuppliers = [], allProducts = [], allBranches = [];
-let historyCurrentPage = 1;
-const itemsPerPage = 10;
 let currentEditingOrder = { id: null, items: [] };
-let historySortBy = 'date';
-let historySortDesc = true;
 let replaceTargetProductId = null; 
 
 function init() {
-    setupLangSwitcher(() => { renderPendingOrders(); renderOrderHistory(); });
+    setupLangSwitcher(() => triggerRenders());
     setupLogout();
     setupMobileMenu();
 
@@ -30,112 +26,132 @@ function init() {
     });
 }
 
+function triggerRenders() {
+    if (pendingOrders.length >= 0 && allStaff.length > 0 && allBranches.length > 0) renderPendingOrders();
+    if (processedOrders.length >= 0 && allStaff.length > 0 && allBranches.length > 0) renderOrderHistory();
+}
+
 function fetchAllBranches() {
-    onSnapshot(collection(db, "branches"), (snapshot) => {
-        allBranches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const contextSelect = document.getElementById('global-branch-context-select');
-        if (contextSelect) {
-            contextSelect.innerHTML = currentUserRole === 'superadmin' ? `<option value="ALL">${translations[currentLang].all_branches || 'All Branches'}</option>` : '';
+    onSnapshot(collection(db, "branches"), snap => {
+        allBranches = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const branchFilter = document.getElementById('history-branch-filter');
+        if (branchFilter) {
+            branchFilter.innerHTML = '<option value="">All Branches</option>';
             allBranches.forEach(b => {
-                contextSelect.innerHTML += `<option value="${b.id}" ${b.id === activeBranchContext ? 'selected' : ''}>${b.name}</option>`;
+                if (currentUserRole === 'superadmin' || currentUserAccessibleBranches.includes(b.id)) {
+                    branchFilter.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+                }
             });
         }
+        triggerRenders();
     });
 }
-function fetchAllDepartments() { onSnapshot(collection(db, "departments"), snap => allDepartments = snap.docs.map(d => ({ id: d.id, ...d.data() }))); }
-function fetchAllStaff() { onSnapshot(collection(db, "users"), snap => allStaff = snap.docs.map(d => ({ id: d.id, ...d.data() }))); }
-function fetchAllSuppliers() { onSnapshot(collection(db, "suppliers"), snap => allSuppliers = snap.docs.map(d => ({ id: d.id, ...d.data() }))); }
-function fetchAllProducts() { onSnapshot(collection(db, "products"), snap => allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }))); }
+function fetchAllDepartments() { 
+    onSnapshot(collection(db, "departments"), snap => {
+        allDepartments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const deptFilter = document.getElementById('history-dept-filter');
+        if (deptFilter) {
+            deptFilter.innerHTML = '<option value="">All Departments</option>';
+            allDepartments.forEach(d => deptFilter.innerHTML += `<option value="${d.id}">${d.name_en}</option>`);
+        }
+        triggerRenders();
+    }); 
+}
+function fetchAllStaff() { onSnapshot(collection(db, "users"), snap => { allStaff = snap.docs.map(d => ({ id: d.id, ...d.data() })); triggerRenders(); }); }
+function fetchAllSuppliers() { onSnapshot(collection(db, "suppliers"), snap => { allSuppliers = snap.docs.map(d => ({ id: d.id, ...d.data() })); triggerRenders(); }); }
+function fetchAllProducts() { onSnapshot(collection(db, "products"), snap => { allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() })); triggerRenders(); }); }
 
 function fetchPendingOrders() {
-    document.getElementById('orders-loading').classList.remove('hidden');
-    onSnapshot(query(collection(db, "orders"), where("status", "==", "Pending")), (snapshot) => {
-        pendingOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        document.getElementById('orders-loading').classList.add('hidden');
-        renderPendingOrders();
+    onSnapshot(query(collection(db, "orders"), where("status", "==", "Pending")), snap => {
+        pendingOrders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        document.getElementById('orders-loading')?.classList.add('hidden');
+        triggerRenders();
     });
 }
 
 function fetchProcessedOrders() {
-    document.getElementById('history-loading').classList.remove('hidden');
-    const q = query(collection(db, "orders"), where("status", "!=", "Pending"), limit(300));
-    onSnapshot(q, (snapshot) => {
-        let orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        orders.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-        processedOrders = orders;
-        document.getElementById('history-loading').classList.add('hidden');
-        renderOrderHistory();
+    const q = query(collection(db, "orders"), where("status", "!=", "Pending"), limit(400));
+    onSnapshot(q, snap => {
+        processedOrders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        document.getElementById('history-loading')?.classList.add('hidden');
+        triggerRenders();
     });
 }
 
 function renderPendingOrders() {
     const list = document.getElementById('pending-orders-list');
+    if(!list) return;
     const branchContext = currentUserRole === 'admin' ? currentUserBranchId : activeBranchContext;
     const filteredOrders = pendingOrders.filter(o => branchContext === 'ALL' || o.branchId === branchContext);
 
-    list.innerHTML = '';
     if (filteredOrders.length === 0) {
-        list.innerHTML = `<p class="text-gray-500">${translations[currentLang].pending_orders?.toLowerCase() === 'คำสั่งซื้อที่รอดำเนินการ' ? 'ไม่มีคำสั่งซื้อที่รอดำเนินการ' : 'No pending orders.'}</p>`;
+        list.innerHTML = `<p class="text-gray-500 p-4 border rounded bg-gray-50 text-center">${translations[currentLang].pending_orders?.toLowerCase() === 'คำสั่งซื้อที่รอดำเนินการ' ? 'ไม่มีคำสั่งซื้อที่รอดำเนินการ' : 'No pending orders.'}</p>`;
         document.getElementById('generate-list-btn').disabled = true;
         return;
     }
     document.getElementById('generate-list-btn').disabled = false;
 
-    const ordersHierarchy = filteredOrders.reduce((acc, order) => {
-        const branch = allBranches.find(b => b.id === order.branchId);
-        const branchName = branch ? branch.name : 'Unknown Branch';
-        const deptName = order[`departmentName_${currentLang}`] || order.departmentName || 'Unknown Dept';
-        const user = allStaff.find(s => s.id === order.userId);
-        const userName = user?.name || 'Unknown User';
+    let html = `
+    <div class="overflow-x-auto rounded-lg">
+        <table class="min-w-full bg-white">
+            <thead class="bg-gray-100 border-b">
+                <tr>
+                    <th class="p-3 w-8 text-center"><input type="checkbox" id="select-all-pending" class="w-4 h-4 rounded text-blue-600 cursor-pointer" checked></th>
+                    <th class="p-3 text-left text-xs font-bold text-gray-600 uppercase">Date</th>
+                    <th class="p-3 text-left text-xs font-bold text-gray-600 uppercase">Branch</th>
+                    <th class="p-3 text-left text-xs font-bold text-gray-600 uppercase">Dept</th>
+                    <th class="p-3 text-left text-xs font-bold text-gray-600 uppercase">Staff</th>
+                    <th class="p-3 text-center text-xs font-bold text-gray-600 uppercase">Items</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
 
-        if (!acc[branchName]) acc[branchName] = {};
-        if (!acc[branchName][deptName]) acc[branchName][deptName] = {};
-        if (!acc[branchName][deptName][userName]) acc[branchName][deptName][userName] = [];
-        acc[branchName][deptName][userName].push(order);
-        return acc;
-    }, {});
+    filteredOrders.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)).forEach(order => {
+        const branchName = allBranches.find(b => b.id === order.branchId)?.name || 'N/A';
+        const deptName = order[`departmentName_${currentLang}`] || order.departmentName || 'N/A';
+        const userName = allStaff.find(s => s.id === order.userId)?.name || 'N/A';
+        const orderDate = order.createdAt ? formatDate(order.createdAt.toDate()) : 'N/A';
+        const nbItems = order.items.reduce((sum, i) => sum + parseInt(i.quantity||0), 0);
+        
+        const itemsHtml = order.items.map(item => `
+            <li class="flex items-center gap-3 mb-2 p-1 hover:bg-gray-50 rounded">
+                <input type="checkbox" data-order-id="${order.id}" data-product-id="${item.productId}" class="item-select-checkbox w-4 h-4 text-blue-600 cursor-pointer" checked>
+                <span class="text-gray-800 text-sm"><span class="font-bold bg-blue-50 px-1 rounded text-blue-700">${item.quantity}</span> x ${item[`productName_${currentLang}`] || item.productName}</span>
+            </li>
+        `).join('');
 
-    let html = '';
-    for (const branch in ordersHierarchy) {
-        html += `<div class="mb-8"><h3 class="text-xl font-extrabold text-indigo-800 mb-3 border-b-2 border-indigo-200 pb-1 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>${branch}</h3>`;
-        for (const dept in ordersHierarchy[branch]) {
-            html += `<div class="border rounded-lg p-4 bg-gray-50 mb-4 ml-2"><h4 class="font-bold text-lg text-gray-700">${dept}</h4>`;
-            for (const user in ordersHierarchy[branch][dept]) {
-                html += `<div class="mt-2 pl-4 border-l-2 border-blue-500"><p class="font-semibold text-md">${user}</p>`;
-                ordersHierarchy[branch][dept][user].forEach(order => {
-                    const orderDate = order.createdAt ? formatDate(order.createdAt.toDate()) : 'N/A';
-
-                    const itemsHtml = order.items.map(item => `
-        <li class="flex items-center gap-2 mb-1">
-            <input type="checkbox" data-order-id="${order.id}" data-product-id="${item.productId}" class="item-select-checkbox w-4 h-4 text-blue-600 cursor-pointer" checked>
-            <span class="text-gray-700">${item.quantity} x ${item[`productName_${currentLang}`] || item.productName}</span>
-        </li>`).join('');
-
-                    html += `
-        <div class="relative mt-2 bg-white p-3 rounded shadow-sm">
-            <p class="text-xs font-bold text-gray-400 mb-2 uppercase">${orderDate}</p>
-            
-            <ul class="text-gray-600">${itemsHtml}</ul>
-            ${order.notes ? `<p class="text-sm text-gray-500 mt-2 italic border-l-2 border-gray-300 pl-2"><strong>Note:</strong> ${order.notes}</p>` : ''}
-            <div class="flex flex-wrap gap-2 mt-3 pt-2 border-t">
-                <button data-id="${order.id}" class="edit-order-btn text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">Edit</button>
-                <button data-id="${order.id}" class="cancel-order-btn text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200">Cancel</button>
-                <button data-id="${order.id}" class="permanent-delete-order-btn text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 ml-auto flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> ${translations[currentLang].delete_permanently || 'Delete'}</button>
-            </div>
-        </div>`;
-                });
-                html += `</div>`;
-            }
-            html += `</div>`;
-        }
-        html += `</div>`;
-    }
+        html += `
+            <tr class="border-b hover:bg-gray-50 cursor-pointer pending-order-row transition-colors">
+                <td class="p-3 text-center" onclick="event.stopPropagation()"><input type="checkbox" class="pending-master-checkbox w-4 h-4 rounded text-blue-600 cursor-pointer" checked></td>
+                <td class="p-3 text-sm text-gray-700 font-medium toggle-pending-details">${orderDate}</td>
+                <td class="p-3 text-sm text-gray-700 font-bold toggle-pending-details">${branchName}</td>
+                <td class="p-3 text-sm text-gray-600 toggle-pending-details">${deptName}</td>
+                <td class="p-3 text-sm text-gray-600 toggle-pending-details">${userName}</td>
+                <td class="p-3 text-sm text-gray-600 toggle-pending-details text-center font-bold bg-gray-50 rounded">${nbItems}</td>
+            </tr>
+            <tr class="hidden bg-slate-50 border-b-2 border-blue-200">
+                <td colspan="6" class="p-4">
+                    <div class="ml-4 border-l-2 border-blue-400 pl-4">
+                        <ul class="mb-3">${itemsHtml}</ul>
+                        ${order.notes ? `<p class="text-sm text-gray-600 italic mb-4 bg-yellow-50 p-2 rounded border border-yellow-200"><strong>Note:</strong> ${order.notes}</p>` : ''}
+                        <div class="flex gap-2">
+                            <button data-id="${order.id}" class="edit-order-btn text-xs bg-blue-100 text-blue-700 px-4 py-2 rounded shadow-sm hover:bg-blue-200 font-bold">Edit</button>
+                            <button data-id="${order.id}" class="cancel-order-btn text-xs bg-orange-100 text-orange-700 px-4 py-2 rounded shadow-sm hover:bg-orange-200 font-bold">Cancel</button>
+                            <button data-id="${order.id}" class="permanent-delete-order-btn text-xs bg-red-600 text-white px-4 py-2 rounded shadow-sm hover:bg-red-700 font-bold ml-auto flex items-center gap-1">Delete Permanently</button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    html += `</tbody></table></div>`;
     list.innerHTML = html;
 }
 
 function generateSupplierList() {
     const checkedCheckboxes = Array.from(document.querySelectorAll('.item-select-checkbox:checked'));
-    if (checkedCheckboxes.length === 0) return alert("Veuillez sélectionner au moins un article.");
+    if (checkedCheckboxes.length === 0) return alert(translations[currentLang].alert_select_item || "Please select at least one item.");
 
     const selectedData = {};
     checkedCheckboxes.forEach(cb => {
@@ -148,139 +164,273 @@ function generateSupplierList() {
         const order = pendingOrders.find(o => o.id === orderId);
         if (!order) continue;
         const branchObj = allBranches.find(b => b.id === order.branchId);
-        
-        // C'EST ICI QUE L'ON CRÉE LA CHAÎNE DE CARACTÈRES AVEC LE COMPANY NAME
-        const branchFormattedName = branchObj 
-            ? `${branchObj.name} - ${branchObj.companyName || 'No Company Name'}` 
-            : 'Unknown Branch';
+        const branchFormattedName = branchObj ? `${branchObj.name} - ${branchObj.companyName || 'No Company Name'}` : 'Unknown Branch';
 
         order.items.filter(i => selectedData[orderId].includes(i.productId)).forEach(item => {
             const key = item.productId + '_' + order.branchId;
-            if (!mergedItems[key]) mergedItems[key] = { ...item, branchFormattedName, quantity: 0 };
+            if (!mergedItems[key]) {
+                mergedItems[key] = { 
+                    ...item, 
+                    branchId: order.branchId,
+                    branchFormattedName, 
+                    quantity: 0, 
+                    orderIds: [] 
+                };
+            }
             mergedItems[key].quantity += item.quantity;
+            if(!mergedItems[key].orderIds.includes(order.id)) mergedItems[key].orderIds.push(order.id);
         });
     }
 
-    const sortedBySupplier = Object.values(mergedItems).reduce((acc, item) => {
-        const supplier = allSuppliers.find(s => s.id === item.supplier)?.name || 'Uncategorized';
-        if (!acc[supplier]) acc[supplier] = {};
-        if (!acc[supplier][item.branchFormattedName]) acc[supplier][item.branchFormattedName] = [];
-        acc[supplier][item.branchFormattedName].push(item);
+    const sortedByBranch = Object.values(mergedItems).reduce((acc, item) => {
+        const supplier = allSuppliers.find(s => s.id === item.supplier);
+        const supplierName = supplier ? supplier.name : 'Uncategorized';
+        const supplierId = supplier ? supplier.id : 'unknown';
+        
+        if (!acc[item.branchId]) acc[item.branchId] = { branchFormattedName: item.branchFormattedName, suppliers: {} };
+        if (!acc[item.branchId].suppliers[supplierId]) acc[item.branchId].suppliers[supplierId] = { name: supplierName, items: [] };
+        
+        acc[item.branchId].suppliers[supplierId].items.push(item);
         return acc;
     }, {});
 
     const container = document.getElementById('supplier-list-container');
-    let html = `
-        <div class="flex flex-col sm:flex-row gap-2 mb-6">
-            <button id="mark-processed-btn" class="flex-grow bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-yellow-600">Mark Selected as Processed</button>
-            <button id="copy-all-lists-btn" class="bg-gray-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-900 flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m-5 4h6m-6 4h6m-6 4h6"></path></svg>
-                Copy All
-            </button>
-        </div>`;
+    let tabsHtml = `<div class="flex border-b mb-4 overflow-x-auto scrollbar-hide">`;
+    let contentHtml = `<div id="tab-contents">`;
+    let isFirst = true;
 
-    for (const supplier in sortedBySupplier) {
-        const sanitizedSupplier = supplier.replace(/"/g, '&quot;');
-        html += `
-            <div class="supplier-block mb-4 p-4 bg-white rounded border shadow-sm" data-supplier-name="${sanitizedSupplier}">
-                <div class="flex justify-between items-center border-b pb-2 mb-3">
-                    <h4 class="text-xl font-bold text-gray-800">${supplier}</h4>
-                    <button class="copy-supplier-list-btn text-gray-500 hover:text-blue-600 p-1 rounded hover:bg-gray-100" title="Copy this list">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                    </button>
-                </div>`;
+    for (const branchId in sortedByBranch) {
+        const branchData = sortedByBranch[branchId];
+        const activeTabClass = isFirst ? 'border-blue-600 text-blue-600 bg-blue-50' : 'border-transparent text-gray-500 hover:bg-gray-50';
+        const activeContentClass = isFirst ? '' : 'hidden';
 
-        for (const branchName in sortedBySupplier[supplier]) {
-            // Affichage du nom formaté [Commercial Name - Company Name]
-            html += `<h5 class="font-semibold text-blue-700 mt-2 mb-1 flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> ${branchName}</h5>`;
-            html += `<ul class="space-y-1 font-mono text-sm text-gray-700 supplier-items-list mb-3 pl-2 border-l-2 border-blue-200">`;
+        tabsHtml += `<button class="branch-tab-btn px-4 py-3 border-b-2 font-bold text-sm whitespace-nowrap ${activeTabClass}" data-target="tab-pane-${branchId}">${branchData.branchFormattedName.split('-')[0].trim()}</button>`;
+        contentHtml += `<div id="tab-pane-${branchId}" class="branch-tab-pane ${activeContentClass}" data-branch-id="${branchId}" data-branch-full-name="${branchData.branchFormattedName.replace(/"/g, '&quot;')}">`;
+        
+        for (const supplierId in branchData.suppliers) {
+            const suppData = branchData.suppliers[supplierId];
+            contentHtml += `
+                <div class="supplier-block mb-4 p-4 bg-white rounded border shadow-sm" data-supplier-id="${supplierId}" data-supplier-name="${suppData.name.replace(/"/g, '&quot;')}">
+                    <h4 class="text-xl font-bold text-gray-800 border-b pb-2 mb-3">${suppData.name}</h4>
+                    <ul class="space-y-2 font-mono text-sm text-gray-700 pl-2 border-l-2 border-blue-200">`;
 
-            sortedBySupplier[supplier][branchName].sort((a, b) => (a.productRef || '').localeCompare(b.productRef || '')).forEach(item => {
-                html += `<li data-raw-text="${item.productRef || 'NO-REF'} - ${item[`productName_${currentLang}`] || item.productName}: ${item.quantity} ${item[`packaging_${currentLang}`] || item.packaging || 'unit'}(s)">
-                            <span class="font-bold text-blue-600">${item.productRef || 'NO-REF'}</span> - ${item[`productName_${currentLang}`] || item.productName}: <span class="font-bold bg-gray-100 px-1 rounded">${item.quantity}</span> ${item[`packaging_${currentLang}`] || item.packaging || 'unit'}(s)
-                        </li>`;
+            suppData.items.sort((a, b) => (a.productRef || '').localeCompare(b.productRef || '')).forEach(item => {
+                // Stockage des datas dans le HTML pour reconstruction lors de la fusion
+                contentHtml += `
+                    <li class="flex items-center gap-2 hover:bg-gray-50 p-1 rounded transition-colors" data-raw-text="${item.productRef || 'NO-REF'} - ${item[`productName_${currentLang}`] || item.productName}: ${item.quantity} ${item[`packaging_${currentLang}`] || item.packaging || 'unit'}(s)">
+                        <input type="checkbox" class="final-item-checkbox w-4 h-4 text-blue-600 rounded cursor-pointer" 
+                            data-product-id="${item.productId}"
+                            data-product-name="${item.productName?.replace(/"/g, '&quot;') || ''}"
+                            data-product-name-th="${item.productName_th?.replace(/"/g, '&quot;') || ''}"
+                            data-product-ref="${item.productRef?.replace(/"/g, '&quot;') || ''}"
+                            data-packaging="${item.packaging?.replace(/"/g, '&quot;') || ''}"
+                            data-packaging-th="${item.packaging_th?.replace(/"/g, '&quot;') || ''}"
+                            data-quantity="${item.quantity}"
+                            data-order-ids='${JSON.stringify(item.orderIds)}' checked>
+                        <span><span class="font-bold text-blue-600">${item.productRef || 'NO-REF'}</span> - ${item[`productName_${currentLang}`] || item.productName}: <span class="font-bold bg-gray-100 px-1 rounded">${item.quantity}</span> ${item[`packaging_${currentLang}`] || item.packaging || 'unit'}(s)</span>
+                    </li>`;
             });
-            html += `</ul>`;
+            contentHtml += `</ul></div>`;
         }
-        html += `</div>`;
+        contentHtml += `</div>`;
+        isFirst = false;
     }
-    container.innerHTML = html;
+    tabsHtml += `</div></div>`;
+
+    container.innerHTML = tabsHtml + contentHtml + `
+        <div class="flex flex-col sm:flex-row gap-2 mt-4">
+            <button id="mark-processed-btn" class="flex-grow bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-yellow-600 shadow-sm" data-key="mark_tab_processed">Mark Checked Items in THIS Tab as Processed</button>
+            <button id="copy-all-lists-btn" class="bg-gray-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-900 flex items-center justify-center gap-2 shadow-sm" data-key="copy_displayed_branch">Copy Displayed Branch</button>
+        </div>`;
     container.classList.remove('hidden');
-    container.dataset.selectedDataMap = JSON.stringify(selectedData);
+    // Actualisation des traductions pour les nouveaux boutons
+    setLanguage(currentLang);
+}
+
+async function markOrdersAsProcessed() {
+    const activePane = document.querySelector('.branch-tab-pane:not(.hidden)');
+    if (!activePane) return showToast(translations[currentLang].alert_no_branch || "No active branch selected.", true);
+
+    const checkedFinal = activePane.querySelectorAll('.final-item-checkbox:checked');
+    if (checkedFinal.length === 0) return alert(translations[currentLang].alert_select_item || "Please select at least one item.");
+    if (!confirm(translations[currentLang].confirm_process_tab || "Process ONLY checked items in THIS tab? (Unchecked items will remain Pending)")) return;
+
+    const batch = writeBatch(db);
+    const activeBranchId = activePane.dataset.branchId;
+
+    // 1. Purger les commandes originales (Retirer les items validés ou supprimer la commande)
+    const affectedOrderIds = new Set();
+    const processedProductIdsByOrder = {};
+
+    checkedFinal.forEach(cb => {
+        const pId = cb.dataset.productId;
+        const oIds = JSON.parse(cb.dataset.orderIds);
+        oIds.forEach(oId => {
+            affectedOrderIds.add(oId);
+            if (!processedProductIdsByOrder[oId]) processedProductIdsByOrder[oId] = [];
+            processedProductIdsByOrder[oId].push(pId);
+        });
+    });
+
+    affectedOrderIds.forEach(orderId => {
+        const originalOrder = pendingOrders.find(o => o.id === orderId);
+        if (!originalOrder) return;
+        const pIdsToRemove = processedProductIdsByOrder[orderId] || [];
+        const remainingItems = originalOrder.items.filter(i => !pIdsToRemove.includes(i.productId));
+        
+        if (remainingItems.length === 0) {
+            batch.delete(doc(db, "orders", orderId));
+        } else {
+            batch.update(doc(db, "orders", orderId), { items: remainingItems });
+        }
+    });
+
+    // 2. Créer le Bon de Commande Consolidé (1 par Fournisseur de la branche active)
+    const supplierBlocks = activePane.querySelectorAll('.supplier-block');
+    supplierBlocks.forEach(block => {
+        const supplierId = block.dataset.supplierId;
+        const checkedBoxesInBlock = block.querySelectorAll('.final-item-checkbox:checked');
+        if (checkedBoxesInBlock.length === 0) return;
+
+        const consolidatedItems = Array.from(checkedBoxesInBlock).map(cb => {
+            return {
+                productId: cb.dataset.productId,
+                productName: cb.dataset.productName || '',
+                productName_th: cb.dataset.productNameTh || '',
+                productRef: cb.dataset.productRef || '',
+                packaging: cb.dataset.packaging || '',
+                packaging_th: cb.dataset.packagingTh || '',
+                quantity: parseInt(cb.dataset.quantity, 10),
+                supplier: supplierId
+            };
+        });
+
+        const newOrderRef = doc(collection(db, "orders"));
+        batch.set(newOrderRef, {
+            branchId: activeBranchId,
+            status: "Processed",
+            createdAt: serverTimestamp(),
+            departmentName: "Consolidated", 
+            departmentId: "consolidated",
+            userId: currentUser ? currentUser.uid : 'system',
+            items: consolidatedItems,
+            mergedFrom: Array.from(affectedOrderIds)
+        });
+    });
+
+    try {
+        await batch.commit();
+        showToast('Orders successfully consolidated and processed.');
+        document.getElementById('supplier-list-container').classList.add('hidden');
+    } catch (e) { showToast('Error updating orders.', true); }
 }
 
 function renderOrderHistory() {
-    const tbody = document.getElementById('order-history-table-body');
+    const container = document.getElementById('grouped-history-container');
+    if(!container) return;
     const branchContext = currentUserRole === 'admin' ? currentUserBranchId : activeBranchContext;
     let filteredHistory = processedOrders.filter(o => branchContext === 'ALL' || o.branchId === branchContext);
 
-    const startInput = document.getElementById('history-start-date').value;
-    const endInput = document.getElementById('history-end-date').value;
+    const statusF = document.getElementById('history-status-filter')?.value;
+    const branchF = document.getElementById('history-branch-filter')?.value;
+    const deptF = document.getElementById('history-dept-filter')?.value;
+    const startInput = document.getElementById('history-start-date')?.value;
+    const endInput = document.getElementById('history-end-date')?.value;
 
-    if (startInput) {
-        const start = new Date(startInput).setHours(0, 0, 0, 0);
-        filteredHistory = filteredHistory.filter(o => o.createdAt && o.createdAt.toMillis() >= start);
+    if (statusF) filteredHistory = filteredHistory.filter(o => o.status === statusF);
+    if (branchF) filteredHistory = filteredHistory.filter(o => o.branchId === branchF);
+    if (deptF) filteredHistory = filteredHistory.filter(o => o.departmentId === deptF);
+    if (startInput) filteredHistory = filteredHistory.filter(o => o.createdAt && o.createdAt.toMillis() >= new Date(startInput).setHours(0,0,0,0));
+    if (endInput) filteredHistory = filteredHistory.filter(o => o.createdAt && o.createdAt.toMillis() <= new Date(endInput).setHours(23,59,59,999));
+
+    if (filteredHistory.length === 0) {
+        container.innerHTML = `<p class="text-gray-500 text-center p-6 bg-gray-50 rounded border">No orders match these filters.</p>`;
+        return;
     }
-    if (endInput) {
-        const end = new Date(endInput).setHours(23, 59, 59, 999);
-        filteredHistory = filteredHistory.filter(o => o.createdAt && o.createdAt.toMillis() <= end);
-    }
 
-    filteredHistory.sort((a, b) => {
-        let valA, valB;
-        if (historySortBy === 'date') { valA = a.createdAt?.toMillis() || 0; valB = b.createdAt?.toMillis() || 0; }
-        else if (historySortBy === 'branch') { valA = allBranches.find(br => br.id === a.branchId)?.name || ''; valB = allBranches.find(br => br.id === b.branchId)?.name || ''; }
-        else if (historySortBy === 'department') { valA = a.departmentName || ''; valB = b.departmentName || ''; }
-        else if (historySortBy === 'user') { valA = allStaff.find(s => s.id === a.userId)?.name || ''; valB = allStaff.find(s => s.id === b.userId)?.name || ''; }
-        else if (historySortBy === 'status') { valA = a.status || ''; valB = b.status || ''; }
-
-        if (typeof valA === 'string') return historySortDesc ? valB.localeCompare(valA) : valA.localeCompare(valB);
-        return historySortDesc ? valB - valA : valA - valB;
+    const hierarchy = {};
+    filteredHistory.forEach(order => {
+        const dateStr = order.createdAt ? formatDate(order.createdAt.toDate()) : 'N/A';
+        const branchName = allBranches.find(b => b.id === order.branchId)?.name || 'Unknown Branch';
+        
+        // Traduction dynamique pour le département consolidé
+        const deptName = order.departmentId === "consolidated" 
+            ? (translations[currentLang].consolidated || "Consolidated")
+            : (order[`departmentName_${currentLang}`] || order.departmentName || 'Unknown Dept');
+        
+        if(!hierarchy[dateStr]) hierarchy[dateStr] = {};
+        if(!hierarchy[dateStr][branchName]) hierarchy[dateStr][branchName] = {};
+        if(!hierarchy[dateStr][branchName][deptName]) hierarchy[dateStr][branchName][deptName] = [];
+        hierarchy[dateStr][branchName][deptName].push(order);
     });
 
-    document.getElementById('mass-delete-history-btn').classList.add('hidden');
-    document.getElementById('select-all-history').checked = false;
+    let html = '';
+    const dates = Object.keys(hierarchy).sort((a,b) => new Date(b) - new Date(a));
+    
+    dates.forEach(dateStr => {
+        html += `<div class="mb-6"><h4 class="text-lg font-extrabold text-gray-800 border-b-2 border-gray-800 pb-1 mb-3">📅 ${dateStr}</h4>`;
+        
+        Object.keys(hierarchy[dateStr]).sort().forEach(branch => {
+            html += `<div class="ml-2 mb-4"><h5 class="font-bold text-blue-700 bg-blue-50 p-2 rounded mb-2 flex items-center gap-2">🏢 ${branch}</h5>`;
+            
+            Object.keys(hierarchy[dateStr][branch]).sort().forEach(dept => {
+                html += `<div class="ml-4 mb-3 border-l-2 border-gray-300 pl-3">
+                            <h6 class="font-semibold text-gray-600 mb-2">🍳 ${dept}</h6>
+                            <div class="space-y-2">`;
+                
+                hierarchy[dateStr][branch][dept].forEach(order => {
+                    const userName = allStaff.find(s => s.id === order.userId)?.name || 'System';
+                    const itemsHtml = order.items.map(i => `${i.quantity}x ${i[`productName_${currentLang}`]||i.productName}`).join(', ');
+                    
+                    let statusBadge = '';
+                    if (order.status === 'Processed') statusBadge = 'bg-yellow-100 text-yellow-800';
+                    else if (order.status === 'Received') statusBadge = 'bg-blue-100 text-blue-800';
+                    else if (order.status === 'Paid') statusBadge = 'bg-green-100 text-green-800';
+                    else if (order.status === 'Cancelled') statusBadge = 'bg-red-100 text-red-800';
 
-    tbody.innerHTML = '';
-    const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
-    const paginated = filteredHistory.slice((historyCurrentPage - 1) * itemsPerPage, historyCurrentPage * itemsPerPage);
-
-    if (paginated.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4">No order history found.</td></tr>`;
-    } else {
-        paginated.forEach(order => {
-            const user = allStaff.find(s => s.id === order.userId);
-            const branch = allBranches.find(b => b.id === order.branchId);
-            const itemsHtml = order.items.map(item => `<li class="text-gray-600">${item.quantity} x ${item[`productName_${currentLang}`] || item.productName}</li>`).join('');
-            const orderDate = formatDate(order.createdAt.toDate()) || 'N/A';
-            const statusClass = order.status === 'Cancelled' ? 'text-red-500' : 'text-gray-500';
-
-            tbody.insertAdjacentHTML('beforeend', `
-                <tr class="border-b order-history-row hover:bg-gray-50">
-                    <td class="table-cell" onclick="event.stopPropagation()"><input type="checkbox" class="history-checkbox w-4 h-4 rounded text-blue-600 cursor-pointer" data-id="${order.id}"></td>
-                    <td class="table-cell cursor-pointer toggle-details">${orderDate}</td>
-                    <td class="table-cell cursor-pointer toggle-details text-gray-500 text-xs">${branch ? branch.name : 'N/A'}</td>
-                    <td class="table-cell cursor-pointer toggle-details">${order.departmentName}</td>
-                    <td class="table-cell cursor-pointer toggle-details">${user?.name || 'Unknown'}</td>
-                    <td class="table-cell cursor-pointer toggle-details ${statusClass}">${order.status} ${order.splitFrom ? '(Split)' : ''}</td>
-                </tr>
-                <tr class="bg-gray-50 hidden">
-                    <td colspan="6" class="p-4"><ul class="list-disc list-inside">${itemsHtml}</ul></td>
-                </tr>
-            `);
+                    html += `
+                        <div class="bg-white p-3 rounded border shadow-sm text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div class="flex-1">
+                                <p class="font-bold text-gray-800">${userName}</p>
+                                <p class="text-gray-600 text-xs mt-1 truncate max-w-xl" title="${itemsHtml}">${itemsHtml}</p>
+                            </div>
+                            <div class="flex flex-col items-end gap-1 shrink-0">
+                                <span class="px-2 py-1 rounded text-xs font-bold uppercase ${statusBadge}">${order.status}</span>
+                                <span class="text-[10px] text-gray-400 font-mono">${order.id}</span>
+                            </div>
+                        </div>`;
+                });
+                html += `</div></div>`;
+            });
+            html += `</div>`;
         });
-    }
-    renderPagination(document.getElementById('history-pagination-controls'), totalPages, historyCurrentPage, (p) => { historyCurrentPage = p; renderOrderHistory(); });
+        html += `</div>`;
+    });
+    container.innerHTML = html;
 }
 
-function handleCheckboxes() {
-    const massDeleteBtn = document.getElementById('mass-delete-history-btn');
-    const checkedBoxes = document.querySelectorAll('.history-checkbox:checked');
-    if (checkedBoxes.length > 0) {
-        massDeleteBtn.classList.remove('hidden');
-        massDeleteBtn.querySelector('span').textContent = `${translations[currentLang].delete_selected || 'Delete'} (${checkedBoxes.length})`;
+function renderEditOrderModal() {
+    const container = document.getElementById('edit-order-items-container');
+    container.innerHTML = '';
+    if (currentEditingOrder.items.length === 0) {
+        container.innerHTML = `<p class="text-gray-500 text-center">This order is empty.</p>`;
     } else {
-        massDeleteBtn.classList.add('hidden');
+        currentEditingOrder.items.forEach(item => {
+            container.insertAdjacentHTML('beforeend', `
+                <div class="flex items-center justify-between py-3 border-b last:border-b-0">
+                    <div>
+                        <p class="font-semibold">${item[`productName_${currentLang}`] || item.productName}</p>
+                        <p class="text-sm text-gray-500">Per ${item[`packaging_${currentLang}`] || item.packaging}</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button data-id="${item.productId}" class="quantity-btn decrease-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">-</button>
+                        <input type="number" data-id="${item.productId}" class="quantity-input shadow-sm border rounded w-16 text-center py-1" value="${item.quantity}" min="0">
+                        <button data-id="${item.productId}" class="quantity-btn increase-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">+</button>
+                        <button data-id="${item.productId}" class="replace-item-btn text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded ml-2">${translations[currentLang].replace || 'Replace'}</button>
+                        <button data-id="${item.productId}" class="remove-item text-red-500 hover:text-red-700 ml-2">X</button>
+                    </div>
+                </div>`);
+        });
     }
 }
 
@@ -402,142 +552,38 @@ function setupSearchInputs() {
     });
 }
 
-function renderEditOrderModal() {
-    const container = document.getElementById('edit-order-items-container');
-    container.innerHTML = '';
-    if (currentEditingOrder.items.length === 0) {
-        container.innerHTML = `<p class="text-gray-500 text-center">This order is empty.</p>`;
-    } else {
-        currentEditingOrder.items.forEach(item => {
-            container.insertAdjacentHTML('beforeend', `
-                <div class="flex items-center justify-between py-3 border-b last:border-b-0">
-                    <div>
-                        <p class="font-semibold">${item[`productName_${currentLang}`] || item.productName}</p>
-                        <p class="text-sm text-gray-500">Per ${item[`packaging_${currentLang}`] || item.packaging}</p>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <button data-id="${item.productId}" class="quantity-btn decrease-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">-</button>
-                        <input type="number" data-id="${item.productId}" class="quantity-input shadow-sm border rounded w-16 text-center py-1" value="${item.quantity}" min="0">
-                        <button data-id="${item.productId}" class="quantity-btn increase-quantity bg-gray-200 h-7 w-7 rounded-full font-bold text-lg flex items-center justify-center">+</button>
-                        <button data-id="${item.productId}" class="replace-item-btn text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded ml-2">${translations[currentLang].replace || 'Replace'}</button>
-                        <button data-id="${item.productId}" class="remove-item text-red-500 hover:text-red-700 ml-2">X</button>
-                    </div>
-                </div>`);
-        });
-    }
-}
-
-async function markOrdersAsProcessed() {
-    if (!confirm("Traiter uniquement les articles sélectionnés ? (Les articles non cochés resteront en 'Pending')")) return;
-    const selectedData = JSON.parse(document.getElementById('supplier-list-container').dataset.selectedDataMap || "{}");
-    if (Object.keys(selectedData).length === 0) return;
-
-    const batch = writeBatch(db);
-    for (const orderId in selectedData) {
-        const selectedProductIds = selectedData[orderId];
-        const originalOrder = pendingOrders.find(o => o.id === orderId);
-        if (!originalOrder) continue;
-
-        const selectedItems = originalOrder.items.filter(i => selectedProductIds.includes(i.productId));
-        const remainingItems = originalOrder.items.filter(i => !selectedProductIds.includes(i.productId));
-
-        if (remainingItems.length === 0) {
-            batch.update(doc(db, "orders", orderId), { status: "Processed" });
-        } else {
-            batch.update(doc(db, "orders", orderId), { items: remainingItems });
-            const newOrderRef = doc(collection(db, "orders"));
-            const newOrderData = { ...originalOrder, items: selectedItems, status: "Processed", splitFrom: orderId };
-            delete newOrderData.id;
-            batch.set(newOrderRef, newOrderData);
-        }
-    }
-
-    try {
-        await batch.commit();
-        showToast('Items processed successfully.');
-        document.getElementById('supplier-list-container').classList.add('hidden');
-    } catch (e) {
-        showToast('Error updating orders.', true);
-    }
-}
-
 function setupEventListeners() {
-    document.getElementById('global-branch-context-select')?.addEventListener('change', (e) => {
-        setActiveBranchContext(e.target.value);
-        renderPendingOrders(); renderOrderHistory();
-        document.getElementById('close-replace-modal')?.addEventListener('click', () => {
-            document.getElementById('replace-product-modal').classList.replace('flex', 'hidden');
+    window.addEventListener('branchContextChanged', (e) => {
+        triggerRenders();
+        document.getElementById('supplier-list-container').classList.add('hidden');
+    });
+
+    ['history-status-filter', 'history-branch-filter', 'history-dept-filter', 'history-start-date', 'history-end-date'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', renderOrderHistory);
+    });
+    document.getElementById('clear-history-filters')?.addEventListener('click', () => {
+        ['history-status-filter', 'history-branch-filter', 'history-dept-filter', 'history-start-date', 'history-end-date'].forEach(id => {
+            if(document.getElementById(id)) document.getElementById(id).value = '';
         });
-    });
-
-    document.querySelectorAll('.sort-header').forEach(th => {
-        th.addEventListener('click', (e) => {
-            const sortType = e.currentTarget.dataset.sort;
-            if (historySortBy === sortType) historySortDesc = !historySortDesc;
-            else { historySortBy = sortType; historySortDesc = false; }
-            renderOrderHistory();
-        });
-    });
-
-    const startFilter = document.getElementById('history-start-date');
-    const endFilter = document.getElementById('history-end-date');
-    [startFilter, endFilter].forEach(el => el.addEventListener('change', () => { historyCurrentPage = 1; renderOrderHistory(); }));
-    document.getElementById('clear-history-dates').addEventListener('click', () => {
-        startFilter.value = ''; endFilter.value = ''; historyCurrentPage = 1; renderOrderHistory();
-    });
-
-    document.getElementById('select-all-history').addEventListener('change', (e) => {
-        const checkboxes = document.querySelectorAll('.history-checkbox');
-        checkboxes.forEach(cb => cb.checked = e.target.checked);
-        handleCheckboxes();
-    });
-    document.getElementById('order-history-table-body').addEventListener('change', (e) => {
-        if (e.target.classList.contains('history-checkbox')) handleCheckboxes();
-    });
-    document.getElementById('mass-delete-history-btn').addEventListener('click', async () => {
-        const checked = Array.from(document.querySelectorAll('.history-checkbox:checked'));
-        if (checked.length === 0) return;
-        if (confirm(`Permanently delete ${checked.length} orders?`)) {
-            const batch = writeBatch(db);
-            checked.forEach(cb => batch.delete(doc(db, "orders", cb.dataset.id)));
-            await batch.commit(); showToast("Orders deleted."); renderOrderHistory();
-        }
+        renderOrderHistory();
     });
 
     document.getElementById('generate-list-btn').addEventListener('click', generateSupplierList);
 
-    // LOGIQUE DE COPIE AVEC LE NOUVEAU FORMAT
-    document.getElementById('supplier-list-container').addEventListener('click', (e) => {
-        if (e.target.id === 'mark-processed-btn') return markOrdersAsProcessed();
-
-        const copyBtn = e.target.closest('.copy-supplier-list-btn');
-        if (copyBtn) {
-            const block = copyBtn.closest('.supplier-block');
-            const branchHeaders = Array.from(block.querySelectorAll('h5'));
-            let textToCopy = `*${block.dataset.supplierName}*\n`;
-            branchHeaders.forEach(h5 => {
-                textToCopy += `${h5.textContent.trim()}\n\n`;
-                const items = Array.from(h5.nextElementSibling.querySelectorAll('li')).map(li => li.dataset.rawText);
-                textToCopy += items.join('\n') + `\n\n`;
-            });
-            navigator.clipboard.writeText(textToCopy.trim()).then(() => showToast(`Copied!`));
-            return;
-        }
-
-        if (e.target.closest('#copy-all-lists-btn')) {
-            let fullText = "";
-            document.querySelectorAll('.supplier-block').forEach(block => {
-                fullText += `=== ${block.dataset.supplierName} ===\n\n`;
-                Array.from(block.querySelectorAll('h5')).forEach(h5 => {
-                    fullText += `[${h5.textContent.trim()}]\n`;
-                    fullText += Array.from(h5.nextElementSibling.querySelectorAll('li')).map(li => li.dataset.rawText).join('\n') + `\n\n`;
-                });
-            });
-            navigator.clipboard.writeText(fullText.trim()).then(() => showToast("All Copied!"));
-        }
-    });
-
     document.getElementById('pending-orders-list').addEventListener('click', (e) => {
+        const toggleCell = e.target.closest('.toggle-pending-details');
+        if (toggleCell) toggleCell.closest('.pending-order-row').nextElementSibling.classList.toggle('hidden');
+
+        if (e.target.id === 'select-all-pending') {
+            const isChecked = e.target.checked;
+            document.querySelectorAll('.pending-master-checkbox, .item-select-checkbox').forEach(cb => cb.checked = isChecked);
+        }
+        if (e.target.classList.contains('pending-master-checkbox')) {
+            const isChecked = e.target.checked;
+            const nextRow = e.target.closest('tr').nextElementSibling;
+            if(nextRow) nextRow.querySelectorAll('.item-select-checkbox').forEach(cb => cb.checked = isChecked);
+        }
+
         const cancelBtn = e.target.closest('.cancel-order-btn');
         const deleteBtn = e.target.closest('.permanent-delete-order-btn');
         const editBtn = e.target.closest('.edit-order-btn');
@@ -553,9 +599,37 @@ function setupEventListeners() {
         }
     });
 
-    document.getElementById('order-history-table-body').addEventListener('click', (e) => {
-        const toggleCell = e.target.closest('.toggle-details');
-        if (toggleCell) toggleCell.closest('.order-history-row').nextElementSibling.classList.toggle('hidden');
+    document.getElementById('supplier-list-container').addEventListener('click', (e) => {
+        if (e.target.id === 'mark-processed-btn') return markOrdersAsProcessed();
+        
+        if (e.target.classList.contains('branch-tab-btn')) {
+            document.querySelectorAll('.branch-tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-600', 'text-blue-600', 'bg-blue-50');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            document.querySelectorAll('.branch-tab-pane').forEach(pane => pane.classList.add('hidden'));
+            
+            e.target.classList.remove('border-transparent', 'text-gray-500');
+            e.target.classList.add('border-blue-600', 'text-blue-600', 'bg-blue-50');
+            document.getElementById(e.target.dataset.target).classList.remove('hidden');
+            return;
+        }
+
+        if (e.target.closest('#copy-all-lists-btn')) {
+            const activePane = document.querySelector('.branch-tab-pane:not(.hidden)');
+            if (!activePane) return;
+            const branchFullName = activePane.dataset.branchFullName;
+            let fullText = "";
+            activePane.querySelectorAll('.supplier-block').forEach(block => {
+                const checkedItems = Array.from(block.querySelectorAll('.final-item-checkbox:checked')).map(cb => cb.closest('li').dataset.rawText);
+                if(checkedItems.length > 0) {
+                    fullText += `=== ${block.dataset.supplierName} ===\n\n[${branchFullName}]\n`;
+                    fullText += checkedItems.join('\n') + `\n\n`;
+                }
+            });
+            if(!fullText) return showToast(translations[currentLang].nothing_to_copy || "Nothing checked to copy.", true);
+            navigator.clipboard.writeText(fullText.trim()).then(() => showToast("Branch Orders Copied!"));
+        }
     });
 
     document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', (e) => {

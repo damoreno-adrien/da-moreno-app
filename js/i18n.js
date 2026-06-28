@@ -27,7 +27,23 @@ export const translations = {
         address: "Address", phone_number: "Phone Number", line_id: "LINE ID", preferred_channel: "Preferred Channel",
         payment_terms: "Payment Terms", other_precise: "Other (precise)", supplier_details: "Supplier Details", 
         products_supplied: "Products Supplied", back_to_suppliers: "Back to Suppliers", email_address: "Email Address",
-        bank_details: "Bank Details", bank_name: "Bank Name", account_number: "Account Number", account_name: "Account Name", select_bank: "Select Bank...", other_bank: "Other Bank"
+        bank_details: "Bank Details", bank_name: "Bank Name", account_number: "Account Number", account_name: "Account Name", select_bank: "Select Bank...", other_bank: "Other Bank",
+        
+        assign_branches: "Assign Branches", extra_permissions: "Extra Permissions",
+        can_receive_orders: "Can Receive Orders", can_manage_payments: "Can Manage Payments",
+        commercial_name: "Commercial Name", legal_company_name: "Legal Company Name",
+        mark_tab_processed: "Mark Checked Items in THIS Tab as Processed", copy_displayed_branch: "Copy Displayed Branch",
+        status_received: "Received", status_paid: "Paid", accounting: "Accounting",
+        
+        awaiting_payments: "Awaiting Payments", pay_order: "Settle Payment", invoice_amount: "Invoice Amount",
+        due_date: "Due Date", mark_as_paid: "Confirm Payment", transaction_ref: "Transaction / Transfer Ref", payment_date: "Payment Date",
+        
+        can_process_orders: "Can Process Orders (Admin Panel)",
+        consolidated: "Consolidated (Purchasing)",
+        alert_select_item: "Please select at least one item.",
+        confirm_process_tab: "Process ONLY checked items in THIS tab? (Unchecked items will remain Pending)",
+        alert_no_branch: "No active branch selected.",
+        nothing_to_copy: "Nothing checked to copy."
     },
     th: {
         management_dashboard: "แดชบอร์ดการจัดการ", dashboard_subtitle: "ดูคำสั่งซื้อและจัดการสินค้า", catalog: "แคตตาล็อก", logout: "ออกจากระบบ",
@@ -55,7 +71,23 @@ export const translations = {
         address: "ที่อยู่", phone_number: "เบอร์โทรศัพท์", line_id: "LINE ID", preferred_channel: "ช่องทางที่สะดวก",
         payment_terms: "เงื่อนไขการชำระเงิน", other_precise: "อื่นๆ (โปรดระบุ)", supplier_details: "รายละเอียดซัพพลายเออร์", 
         products_supplied: "สินค้าที่จัดหา", back_to_suppliers: "กลับไปหน้ารายชื่อซัพพลายเออร์", email_address: "ที่อยู่อีเมล",
-        bank_details: "รายละเอียดบัญชีธนาคาร", bank_name: "ชื่อธนาคาร", account_number: "หมายเลขบัญชี", account_name: "ชื่อบัญชี", select_bank: "เลือกธนาคาร...", other_bank: "ธนาคารอื่นๆ"
+        bank_details: "รายละเอียดบัญชีธนาคาร", bank_name: "ชื่อธนาคาร", account_number: "หมายเลขบัญชี", account_name: "ชื่อบัญชี", select_bank: "เลือกธนาคาร...", other_bank: "ธนาคารอื่นๆ",
+        
+        assign_branches: "กำหนดสาขา", extra_permissions: "สิทธิ์เพิ่มเติม",
+        can_receive_orders: "สามารถรับสินค้าได้", can_manage_payments: "สามารถจัดการการชำระเงินได้",
+        commercial_name: "ชื่อทางการค้า", legal_company_name: "ชื่อบริษัทจดทะเบียน",
+        mark_tab_processed: "ทำเครื่องหมายรายการที่เลือกในแท็บนี้ว่าดำเนินการแล้ว", copy_displayed_branch: "คัดลอกสาขาที่แสดง",
+        status_received: "รับสินค้าแล้ว", status_paid: "ชำระเงินแล้ว", accounting: "บัญชี",
+        
+        awaiting_payments: "รอการชำระเงิน", pay_order: "ชำระเงิน", invoice_amount: "ยอดบิล",
+        due_date: "วันครบกำหนด", mark_as_paid: "ยืนยันการชำระเงิน", transaction_ref: "เลขอ้างอิงการโอน", payment_date: "วันที่ชำระเงิน",
+        
+        can_process_orders: "สามารถจัดการคำสั่งซื้อได้ (แผงควบคุม)",
+        consolidated: "รวมรายการ (ฝ่ายจัดซื้อ)",
+        alert_select_item: "กรุณาเลือกอย่างน้อยหนึ่งรายการ",
+        confirm_process_tab: "ดำเนินการเฉพาะรายการที่เลือกในแท็บนี้หรือไม่? (รายการที่ไม่ได้เลือกจะยังคงรอดำเนินการ)",
+        alert_no_branch: "ไม่ได้เลือกสาขา",
+        nothing_to_copy: "ไม่มีรายการที่เลือกสำหรับคัดลอก"
     }
 };
 
