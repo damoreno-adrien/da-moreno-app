@@ -41,9 +41,18 @@ export function initAuth(onSuccessCallback, requireAdmin = true) {
                         activeBranchContext = currentUserAccessibleBranches[0] || currentUserBranchId;
                     }
 
+                    // --- AFFICHAGE IDENTITÉ (FULL NAME + BRANCH) ---
                     const userDisplay = document.getElementById('user-display');
                     if(userDisplay && userData.name) {
-                        userDisplay.textContent = `${translations[currentLang].logged_in_as} ${userData.name}`;
+                        let branchName = "Unknown Branch";
+                        if (userData.branchId) {
+                            const bSnap = await getDoc(doc(db, "branches", userData.branchId));
+                            if (bSnap.exists()) branchName = bSnap.data().name;
+                        }
+                        userDisplay.textContent = `${userData.name} (${branchName})`;
+                        // Force l'affichage en écrasant les classes Tailwind restrictives
+                        userDisplay.classList.remove('hidden', '2xl:block');
+                        userDisplay.classList.add('block', 'font-semibold', 'text-blue-800');
                     }
                     
                     if (requireAdmin && currentUserRole !== 'admin' && currentUserRole !== 'superadmin' && !currentUserPermissions.canProcessOrders) {
@@ -175,7 +184,6 @@ export function applyRoleBasedUI() {
         if(superadminBranchesSection) superadminBranchesSection.classList.add('hidden');
     }
 
-    // Affichage dynamique des liens dans la barre de navigation (Front & Back)
     const adminLinks = document.querySelectorAll('.admin-link');
     const receivingLinks = document.querySelectorAll('.receiving-link');
     const accountingLinks = document.querySelectorAll('.accounting-link');
@@ -188,7 +196,7 @@ export function applyRoleBasedUI() {
     receivingLinks.forEach(el => el.classList.toggle('hidden', !canSeeReceiving));
     accountingLinks.forEach(el => el.classList.toggle('hidden', !canSeeAccounting));
 
-    if (currentUserRole === 'staff') {
+    if (currentUserRole === 'staff' && !currentUserPermissions.canProcessOrders) {
         document.querySelectorAll('a[href="catalog.html"], a[href="suppliers.html"], a[href="organization.html"]').forEach(el => el.classList.add('hidden'));
     }
 }
@@ -208,4 +216,14 @@ export function setupLogout() {
 export function setActiveBranchContext(context) { 
     activeBranchContext = context; 
     localStorage.setItem('activeBranchContext', context);
+}
+
+// Enregistrement du Service Worker pour l'installation PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        const swPath = window.location.pathname.includes('/admin/') ? '../sw.js' : './sw.js';
+        navigator.serviceWorker.register(swPath)
+            .then(registration => { console.log('ServiceWorker registered with scope:', registration.scope); })
+            .catch(error => { console.log('ServiceWorker registration failed:', error); });
+    });
 }
