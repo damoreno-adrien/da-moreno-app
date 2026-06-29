@@ -1,7 +1,7 @@
-import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db } from "./config.js";
 import { initAuth, currentUserRole, currentUserAccessibleBranches, currentUserPermissions } from "./auth.js";
-import { currentLang } from "./i18n.js";
+import { setLanguage, setupLangSwitcher, currentLang } from "./i18n.js";
 import { showToast, formatDate } from "./ui.js";
 
 let expectedOrders = [];
@@ -10,11 +10,11 @@ let orderToReceive = null;
 
 function init() {
     initAuth(() => {
+        setLanguage(currentLang);
         if (!currentUserPermissions.canReceive && currentUserRole !== 'superadmin' && currentUserRole !== 'admin') {
             document.getElementById('access-denied').classList.remove('hidden');
             return setTimeout(() => window.location.href = 'index.html', 2000);
         }
-        
         document.getElementById('app').classList.remove('hidden');
         fetchAllSuppliers();
         fetchExpectedOrders();
@@ -29,11 +29,10 @@ function fetchAllSuppliers() {
 }
 
 function fetchExpectedOrders() {
-    const q = query(collection(db, "orders"), where("status", "==", "Processed"));
+    const q = query(collection(db, "purchase_orders"), where("status", "==", "Processed"));
     onSnapshot(q, snap => {
         expectedOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
             .filter(o => currentUserRole === 'superadmin' || currentUserAccessibleBranches.includes(o.branchId));
-        
         renderExpectedOrders();
     });
 }
@@ -50,8 +49,7 @@ function renderExpectedOrders() {
     let html = '';
     expectedOrders.sort((a,b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0)).forEach(order => {
         const orderDate = order.createdAt ? formatDate(order.createdAt.toDate()) : 'Unknown';
-        const supplierId = order.items[0]?.supplier;
-        const supplierName = allSuppliers.find(s => s.id === supplierId)?.name || 'Unknown Supplier';
+        const supplierName = allSuppliers.find(s => s.id === order.supplierId)?.name || 'Unknown Supplier';
         const nbItems = order.items.reduce((sum, i) => sum + parseInt(i.quantity||0), 0);
         
         html += `
@@ -73,11 +71,8 @@ function renderExpectedOrders() {
 function calculateDueDate(paymentTerms) {
     const today = new Date();
     if (paymentTerms === 'POD' || !paymentTerms) return today.toISOString().split('T')[0];
-    
     const days = parseInt(paymentTerms, 10);
-    if (!isNaN(days)) {
-        today.setDate(today.getDate() + days);
-    }
+    if (!isNaN(days)) today.setDate(today.getDate() + days);
     return today.toISOString().split('T')[0];
 }
 
@@ -103,17 +98,11 @@ function openReceiveModal(orderId) {
     });
     container.innerHTML = itemsHtml;
 
-    const supplierId = orderToReceive.items[0]?.supplier;
-    const supplier = allSuppliers.find(s => s.id === supplierId);
-    
+    const supplier = allSuppliers.find(s => s.id === orderToReceive.supplierId);
     const terms = supplier?.paymentTerms || 'POD';
     document.getElementById('payment-terms-hint').textContent = `Supplier Default Terms: ${terms === 'POD' ? 'Pay On Delivery' : terms + ' Days'}`;
-    
     document.getElementById('payment-due-date').value = calculateDueDate(terms);
-    
-    if (terms === 'POD') document.getElementById('payment-method').value = 'Cash';
-    else document.getElementById('payment-method').value = 'Bank Transfer';
-
+    document.getElementById('payment-method').value = terms === 'POD' ? 'Cash' : 'Bank Transfer';
     document.getElementById('invoice-total').value = '';
     document.getElementById('invoice-ref').value = '';
 
@@ -122,20 +111,12 @@ function openReceiveModal(orderId) {
 
 async function confirmReception() {
     if (!orderToReceive) return;
-
     const totalInput = document.getElementById('invoice-total');
-    if (!totalInput.checkValidity()) {
-        totalInput.reportValidity();
-        return;
-    }
+    if (!totalInput.checkValidity()) { totalInput.reportValidity(); return; }
 
     const updatedItems = orderToReceive.items.map(item => {
         const input = document.querySelector(`.receive-qty-input[data-product-id="${item.productId}"]`);
-        const rQty = input ? parseInt(input.value, 10) : item.quantity;
-        return {
-            ...item,
-            receivedQuantity: rQty
-        };
+        return { ...item, receivedQuantity: input ? parseInt(input.value, 10) : item.quantity };
     });
 
     const financials = {
@@ -146,28 +127,28 @@ async function confirmReception() {
     };
 
     try {
-        await updateDoc(doc(db, "orders", orderToReceive.id), {
-            status: "Received",
-            items: updatedItems,
-            financials: financials
+        const batch = writeBatch(db);
+        // 1. Maj du PO Parent
+        batch.update(doc(db, "purchase_orders", orderToReceive.id), {
+            status: "Received", items: updatedItems, financials: financials
         });
+        
+        // 2. Maj des Enfants (Pour que le Staff voit que sa commande est arrivée)
+        const childQ = query(collection(db, "orders"), where("poId", "==", orderToReceive.id));
+        const childSnap = await getDocs(childQ);
+        childSnap.forEach(childDoc => batch.update(childDoc.ref, { status: "Received" }));
 
+        await batch.commit();
         showToast("Delivery marked as Received!");
         document.getElementById('receive-modal').classList.replace('flex', 'hidden');
-    } catch (e) {
-        showToast("Error processing delivery", true);
-    }
+    } catch (e) { showToast("Error processing delivery", true); }
 }
 
 function setupEventListeners() {
     document.getElementById('deliveries-list').addEventListener('click', (e) => {
-        if (e.target.classList.contains('open-receive-btn')) {
-            openReceiveModal(e.target.dataset.id);
-        }
+        if (e.target.classList.contains('open-receive-btn')) openReceiveModal(e.target.dataset.id);
     });
-
     document.getElementById('confirm-receive-btn').addEventListener('click', confirmReception);
-
     document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', (e) => {
         e.target.closest('.fixed.inset-0').classList.replace('flex', 'hidden');
     }));

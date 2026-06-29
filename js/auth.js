@@ -46,7 +46,6 @@ export function initAuth(onSuccessCallback, requireAdmin = true) {
                         userDisplay.textContent = `${translations[currentLang].logged_in_as} ${userData.name}`;
                     }
                     
-                    // AUTORISATION : Admin, Superadmin, OU Staff avec canProcessOrders
                     if (requireAdmin && currentUserRole !== 'admin' && currentUserRole !== 'superadmin' && !currentUserPermissions.canProcessOrders) {
                         denyAccess();
                         return;
@@ -55,21 +54,7 @@ export function initAuth(onSuccessCallback, requireAdmin = true) {
                     const appContainer = document.getElementById('app');
                     if(appContainer) appContainer.classList.remove('hidden');
                     
-                    // CORRECTION : Ré-affichage du bouton Admin sur le Front-end pour les rôles autorisés
-                    if (!requireAdmin && (currentUserRole === 'superadmin' || currentUserRole === 'admin' || currentUserPermissions.canProcessOrders)) {
-                        const adminLink = document.getElementById('admin-link');
-                        const adminLinkMobile = document.getElementById('admin-link-mobile');
-                        if (adminLink) {
-                            adminLink.classList.remove('hidden');
-                            adminLink.classList.add('flex');
-                        }
-                        if (adminLinkMobile) {
-                            adminLinkMobile.classList.remove('hidden');
-                            adminLinkMobile.classList.add('block');
-                        }
-                    }
-
-                    if(requireAdmin) applyRoleBasedUI();
+                    applyRoleBasedUI();
                     
                     if (currentUserRole === 'superadmin' || currentUserAccessibleBranches.length > 1) {
                         await setupBranchContext();
@@ -167,7 +152,7 @@ export function applyRoleBasedUI() {
 
     if (roleBadge) {
         let displayRole = currentUserRole;
-        if (currentUserRole === 'staff' && currentUserPermissions.canProcessOrders) displayRole = "Procurement Staff";
+        if (currentUserRole === 'staff' && currentUserPermissions.canProcessOrders) displayRole = "Procurement";
         
         roleBadge.textContent = displayRole;
         roleBadge.classList.remove('hidden');
@@ -186,13 +171,23 @@ export function applyRoleBasedUI() {
 
     if (currentUserRole === 'superadmin') {
         if(superadminBranchesSection) superadminBranchesSection.classList.remove('hidden');
-        document.getElementById('admin-link')?.classList.remove('hidden');
-        document.getElementById('admin-link')?.classList.add('flex');
     } else {
         if(superadminBranchesSection) superadminBranchesSection.classList.add('hidden');
     }
 
-    // Sécurité UI : On masque le reste de l'Admin Panel si c'est juste un Staff Procurement
+    // Affichage dynamique des liens dans la barre de navigation (Front & Back)
+    const adminLinks = document.querySelectorAll('.admin-link');
+    const receivingLinks = document.querySelectorAll('.receiving-link');
+    const accountingLinks = document.querySelectorAll('.accounting-link');
+
+    const canSeeAdmin = (currentUserRole === 'superadmin' || currentUserRole === 'admin' || currentUserPermissions.canProcessOrders);
+    const canSeeReceiving = (currentUserRole === 'superadmin' || currentUserRole === 'admin' || currentUserPermissions.canReceive);
+    const canSeeAccounting = (currentUserRole === 'superadmin' || currentUserRole === 'admin' || currentUserPermissions.canPay);
+
+    adminLinks.forEach(el => el.classList.toggle('hidden', !canSeeAdmin));
+    receivingLinks.forEach(el => el.classList.toggle('hidden', !canSeeReceiving));
+    accountingLinks.forEach(el => el.classList.toggle('hidden', !canSeeAccounting));
+
     if (currentUserRole === 'staff') {
         document.querySelectorAll('a[href="catalog.html"], a[href="suppliers.html"], a[href="organization.html"]').forEach(el => el.classList.add('hidden'));
     }

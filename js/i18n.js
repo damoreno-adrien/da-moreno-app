@@ -4,7 +4,7 @@ export const translations = {
     en: {
         management_dashboard: "Management Dashboard", dashboard_subtitle: "View orders and manage products.", catalog: "Catalog", logout: "Logout",
         order_processing: "Order Processing", pending_orders: "Pending Orders", loading_orders: "Loading orders...",
-        final_supplier_list: "Final Supplier List", generate_list_subtitle: "Click the button to merge all pending orders into a final list, sorted by supplier.",
+        final_supplier_list: "Final Supplier List", generate_list_subtitle: "Check the items, switch between branches, and mark them as Processed to trigger the delivery cycle.",
         generate_supplier_list: "Generate Supplier List", order_history: "Order History", loading_history: "Loading history...",
         product_management: "Product Management", add_new_product: "Add Product", image: "Image", product_name: "Product Name", reference: "Reference",
         supplier: "Supplier", status: "Status", actions: "Actions", loading_products: "Loading products...",
@@ -33,22 +33,22 @@ export const translations = {
         can_receive_orders: "Can Receive Orders", can_manage_payments: "Can Manage Payments",
         commercial_name: "Commercial Name", legal_company_name: "Legal Company Name",
         mark_tab_processed: "Mark Checked Items in THIS Tab as Processed", copy_displayed_branch: "Copy Displayed Branch",
-        status_received: "Received", status_paid: "Paid", accounting: "Accounting",
+        status_received: "Received", status_paid: "Paid", accounting: "Accounting", receiving: "Receiving", admin_dashboard: "Admin",
         
         awaiting_payments: "Awaiting Payments", pay_order: "Settle Payment", invoice_amount: "Invoice Amount",
         due_date: "Due Date", mark_as_paid: "Confirm Payment", transaction_ref: "Transaction / Transfer Ref", payment_date: "Payment Date",
         
         can_process_orders: "Can Process Orders (Admin Panel)",
-        consolidated: "Consolidated (Purchasing)",
-        alert_select_item: "Please select at least one item.",
+        consolidated: "Purchase Order", alert_select_item: "Please select at least one item.",
         confirm_process_tab: "Process ONLY checked items in THIS tab? (Unchecked items will remain Pending)",
-        alert_no_branch: "No active branch selected.",
-        nothing_to_copy: "Nothing checked to copy."
+        alert_no_branch: "No active branch selected.", nothing_to_copy: "Nothing checked to copy.",
+        reassign_order: "Reassign Order", rollback: "Rollback to Pending", confirm_rollback: "Are you sure you want to cancel this Purchase Order? All linked staff requests will revert to Pending.",
+        back_to_pending: "Back to Pending", list_generated: "List generated successfully!", copied: "Copied!"
     },
     th: {
         management_dashboard: "แดชบอร์ดการจัดการ", dashboard_subtitle: "ดูคำสั่งซื้อและจัดการสินค้า", catalog: "แคตตาล็อก", logout: "ออกจากระบบ",
         order_processing: "การประมวลผลคำสั่งซื้อ", pending_orders: "คำสั่งซื้อที่รอดำเนินการ", loading_orders: "กำลังโหลดคำสั่งซื้อ...",
-        final_supplier_list: "รายชื่อซัพพลายเออร์สุดท้าย", generate_list_subtitle: "คลิกปุ่มเพื่อรวมคำสั่งซื้อที่รอดำเนินการทั้งหมดเป็นรายการสุดท้าย เรียงตามซัพพลายเออร์",
+        final_supplier_list: "รายชื่อซัพพลายเออร์สุดท้าย", generate_list_subtitle: "ตรวจสอบรายการ สลับระหว่างสาขา และทำเครื่องหมายว่าดำเนินการแล้วเพื่อเริ่มรอบการจัดส่ง",
         generate_supplier_list: "สร้างรายชื่อซัพพลายเออร์", order_history: "ประวัติคำสั่งซื้อ", loading_history: "กำลังโหลดประวัติ...",
         product_management: "การจัดการสินค้า", add_new_product: "เพิ่มสินค้า", image: "รูปภาพ", product_name: "ชื่อสินค้า", reference: "อ้างอิง",
         supplier: "ซัพพลายเออร์", status: "สถานะ", actions: "การดำเนินการ", loading_products: "กำลังโหลดสินค้า...",
@@ -77,17 +77,18 @@ export const translations = {
         can_receive_orders: "สามารถรับสินค้าได้", can_manage_payments: "สามารถจัดการการชำระเงินได้",
         commercial_name: "ชื่อทางการค้า", legal_company_name: "ชื่อบริษัทจดทะเบียน",
         mark_tab_processed: "ทำเครื่องหมายรายการที่เลือกในแท็บนี้ว่าดำเนินการแล้ว", copy_displayed_branch: "คัดลอกสาขาที่แสดง",
-        status_received: "รับสินค้าแล้ว", status_paid: "ชำระเงินแล้ว", accounting: "บัญชี",
+        status_received: "รับสินค้าแล้ว", status_paid: "ชำระเงินแล้ว", accounting: "บัญชี", receiving: "รับสินค้า", admin_dashboard: "ผู้ดูแลระบบ",
         
         awaiting_payments: "รอการชำระเงิน", pay_order: "ชำระเงิน", invoice_amount: "ยอดบิล",
         due_date: "วันครบกำหนด", mark_as_paid: "ยืนยันการชำระเงิน", transaction_ref: "เลขอ้างอิงการโอน", payment_date: "วันที่ชำระเงิน",
         
         can_process_orders: "สามารถจัดการคำสั่งซื้อได้ (แผงควบคุม)",
-        consolidated: "รวมรายการ (ฝ่ายจัดซื้อ)",
-        alert_select_item: "กรุณาเลือกอย่างน้อยหนึ่งรายการ",
+        consolidated: "ใบสั่งซื้อ", alert_select_item: "กรุณาเลือกอย่างน้อยหนึ่งรายการ",
         confirm_process_tab: "ดำเนินการเฉพาะรายการที่เลือกในแท็บนี้หรือไม่? (รายการที่ไม่ได้เลือกจะยังคงรอดำเนินการ)",
-        alert_no_branch: "ไม่ได้เลือกสาขา",
-        nothing_to_copy: "ไม่มีรายการที่เลือกสำหรับคัดลอก"
+        alert_no_branch: "ไม่ได้เลือกสาขา", nothing_to_copy: "ไม่มีรายการที่เลือกสำหรับคัดลอก",
+        reassign_order: "โอนคำสั่งซื้อ", rollback: "ย้อนกลับเป็นรอดำเนินการ", confirm_rollback: "คุณแน่ใจหรือไม่ว่าต้องการยกเลิกใบสั่งซื้อนี้? คำขอของพนักงานที่เชื่อมโยงทั้งหมดจะกลับสู่สถานะรอดำเนินการ",
+        
+        back_to_pending: "กลับไปรอดำเนินการ", list_generated: "สร้างรายการสำเร็จแล้ว!", copied: "คัดลอกแล้ว!"
     }
 };
 

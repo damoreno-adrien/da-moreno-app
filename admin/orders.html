@@ -35,17 +35,14 @@
                     <h1 class="text-2xl sm:text-3xl font-bold text-gray-800" data-key="page_title">Process Orders</h1>
                     <span id="role-badge" class="hidden text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wide"></span>
                 </div>
-
                 <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-between xl:justify-end">
                     <p id="user-display" class="text-sm font-medium text-gray-600 hidden 2xl:block truncate max-w-xs"></p>
-
                     <div id="branch-context-container" class="hidden items-center bg-gray-50 border rounded-lg px-2 py-1 shrink-0 order-1">
                         <span class="text-xs text-gray-500 mr-2 font-bold uppercase">Branch:</span>
                         <select id="branch-context-select" class="bg-transparent text-sm font-bold text-blue-700 focus:outline-none">
                             <option value="ALL">ALL BRANCHES</option>
                         </select>
                     </div>
-
                     <div class="flex items-center gap-2 order-2 shrink-0 ml-auto xl:ml-0">
                         <div id="lang-switcher" class="flex items-center text-sm font-medium border border-gray-300 rounded-lg p-1 bg-white">
                             <button data-lang="en" class="lang-btn px-2 py-1 rounded-md transition-colors">EN</button>
@@ -53,10 +50,9 @@
                         </div>
                         <button id="logout-btn" class="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg text-sm font-semibold transition-colors" data-key="logout">Logout</button>
                     </div>
-
                     <div class="flex w-full xl:w-auto items-center gap-2 shrink-0 order-3 mt-1 xl:mt-0">
                         <a href="../index.html" class="flex-1 xl:flex-none text-center px-3 py-2 xl:py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm font-semibold transition-colors shadow-sm whitespace-nowrap" data-key="create_order">Create Order</a>
-                        <a href="../receiving.html" class="flex-1 xl:flex-none text-center px-3 py-2 xl:py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition-colors shadow-sm whitespace-nowrap">Receiving</a>
+                        <a href="../receiving.html" class="receiving-link flex-1 xl:flex-none text-center px-3 py-2 xl:py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition-colors shadow-sm whitespace-nowrap" data-key="receiving">Receiving</a>
                     </div>
                 </div>
             </div>
@@ -69,10 +65,6 @@
                 <a href="catalog.html" class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors" data-key="catalog">Catalog</a>
                 <a href="suppliers.html" class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors" data-key="supplier_management">Suppliers</a>
                 <a href="organization.html" class="nav-link whitespace-nowrap py-2 px-3 hover:text-blue-600 hover:bg-blue-50 rounded-t-lg transition-colors">Organization</a>
-                <a href="admin-panel.html" id="admin-link" class="hidden nav-link whitespace-nowrap py-2 px-3 text-purple-600 hover:bg-purple-50 rounded-t-lg transition-colors items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    Settings
-                </a>
             </nav>
         </header>
 
@@ -82,28 +74,35 @@
         </button>
 
         <div class="flex flex-col gap-8 mb-8">
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <!-- SECTION 1: PENDING ORDERS (DISPARAIT LORS DE LA GÉNÉRATION) -->
+            <div id="pending-orders-wrapper" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 transition-all">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-2xl font-bold text-gray-800" data-key="pending_orders">Pending Orders</h3>
                     <button id="generate-list-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 shadow-sm" data-key="generate_supplier_list">Generate Final List</button>
                 </div>
                 <div id="pending-orders-list" class="space-y-4"></div>
-                <div id="orders-loading" class="text-center py-10">
-                    <p class="text-gray-500 animate-pulse" data-key="loading_orders">Loading orders...</p>
-                </div>
+                <div id="orders-loading" class="text-center py-10"><p class="text-gray-500 animate-pulse" data-key="loading_orders">Loading orders...</p></div>
             </div>
 
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 class="text-2xl font-bold text-gray-800 mb-2" data-key="final_supplier_list">Final Supplier List</h3>
-                <p class="text-gray-600 mb-4" data-key="generate_list_subtitle">Check the items, switch between branches, and mark them as Processed to trigger the delivery cycle.</p>
-                <div id="supplier-list-container" class="hidden bg-gray-50 p-4 rounded-lg border"></div>
+            <!-- SECTION 2: FINAL SUPPLIER LIST (APPARAIT SEULE) -->
+            <div id="supplier-list-wrapper" class="hidden bg-white p-6 rounded-lg shadow-sm border border-gray-200 transition-all">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2" data-key="final_supplier_list">Final Supplier List</h3>
+                        <p class="text-gray-600" data-key="generate_list_subtitle">Check the items, switch between branches, and mark them as Processed to trigger the delivery cycle.</p>
+                    </div>
+                    <button id="back-to-pending-btn" class="shrink-0 bg-gray-100 text-gray-700 font-bold py-2 px-4 rounded hover:bg-gray-200 flex items-center gap-2 border shadow-sm">
+                        &larr; <span data-key="back_to_pending">Back to Pending</span>
+                    </button>
+                </div>
+                <div id="supplier-list-container" class="bg-gray-50 p-4 rounded-lg border"></div>
             </div>
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-sm mb-8 border border-gray-200">
             <h2 class="text-2xl font-bold text-gray-800 mb-6" data-key="order_history">Order History</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-3 bg-gray-50 p-4 rounded-lg border mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-gray-50 p-4 rounded-lg border mb-6">
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Status</label>
                     <select id="history-status-filter" class="w-full text-sm p-2 border rounded bg-white">
@@ -111,16 +110,11 @@
                         <option value="Processed">Processed (Awaiting Delivery)</option>
                         <option value="Received">Received (Awaiting Payment)</option>
                         <option value="Paid">Paid (Closed)</option>
-                        <option value="Cancelled">Cancelled</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1" data-key="branch">Branch</label>
                     <select id="history-branch-filter" class="w-full text-sm p-2 border rounded bg-white"><option value="">All Branches</option></select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1" data-key="department">Department</label>
-                    <select id="history-dept-filter" class="w-full text-sm p-2 border rounded bg-white"><option value="">All Departments</option></select>
                 </div>
                 <div class="md:col-span-2 flex gap-2 items-end">
                     <div class="flex-1">
@@ -153,6 +147,31 @@
                     <button type="button" class="close-modal px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold" data-key="cancel">Cancel</button>
                     <button id="update-order-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold" data-key="update_order">Update Order</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REASSIGN ORDER -->
+    <div id="reassign-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-40 p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-md">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800" data-key="reassign_order">Reassign Order</h2>
+                <button class="close-modal text-gray-500 text-2xl">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="reassign-order-id">
+                <div>
+                    <label class="block font-medium mb-1" data-key="branch">Branch</label>
+                    <select id="reassign-branch" class="w-full p-2 border rounded"></select>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1" data-key="staff_management">Staff</label>
+                    <select id="reassign-staff" class="w-full p-2 border rounded"></select>
+                </div>
+            </div>
+            <div class="p-4 border-t flex justify-end gap-3">
+                <button class="close-modal px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded" data-key="cancel">Cancel</button>
+                <button id="confirm-reassign-btn" class="px-4 py-2 bg-blue-600 text-white font-bold rounded">Save</button>
             </div>
         </div>
     </div>
