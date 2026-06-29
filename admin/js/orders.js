@@ -6,7 +6,7 @@ import { showToast, setupMobileMenu, formatDate } from "../../js/ui.js";
 
 let pendingOrders = [], purchaseOrders = [], allStaff = [], allDepartments = [], allSuppliers = [], allProducts = [], allBranches = [];
 let currentEditingOrder = { id: null, items: [] };
-let replaceTargetProductId = null; 
+let replaceTargetProductId = null;
 
 function init() {
     setupLangSwitcher(() => triggerRenders());
@@ -46,7 +46,7 @@ function fetchAllBranches() {
         triggerRenders();
     });
 }
-function fetchAllDepartments() { 
+function fetchAllDepartments() {
     onSnapshot(collection(db, "departments"), snap => {
         allDepartments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         const deptFilter = document.getElementById('history-dept-filter');
@@ -55,7 +55,7 @@ function fetchAllDepartments() {
             allDepartments.forEach(d => deptFilter.innerHTML += `<option value="${d.id}">${d.name_en}</option>`);
         }
         triggerRenders();
-    }); 
+    });
 }
 function fetchAllStaff() { onSnapshot(collection(db, "users"), snap => { allStaff = snap.docs.map(d => ({ id: d.id, ...d.data() })); triggerRenders(); }); }
 function fetchAllSuppliers() { onSnapshot(collection(db, "suppliers"), snap => { allSuppliers = snap.docs.map(d => ({ id: d.id, ...d.data() })); triggerRenders(); }); }
@@ -80,7 +80,7 @@ function fetchPurchaseOrders() {
 
 function renderPendingOrders() {
     const list = document.getElementById('pending-orders-list');
-    if(!list) return;
+    if (!list) return;
     const branchContext = currentUserRole === 'admin' ? currentUserBranchId : activeBranchContext;
     const filteredOrders = pendingOrders.filter(o => branchContext === 'ALL' || o.branchId === branchContext);
 
@@ -107,13 +107,13 @@ function renderPendingOrders() {
             <tbody>
     `;
 
-    filteredOrders.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)).forEach(order => {
+    filteredOrders.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)).forEach(order => {
         const branchName = allBranches.find(b => b.id === order.branchId)?.name || 'N/A';
         const deptName = order[`departmentName_${currentLang}`] || order.departmentName || 'N/A';
         const userName = allStaff.find(s => s.id === order.userId)?.name || 'N/A';
         const orderDate = order.createdAt ? formatDate(order.createdAt.toDate()) : 'N/A';
         const nbItems = order.items.length;
-        
+
         const itemsHtml = order.items.map(item => `
             <li class="flex items-center gap-3 mb-2 p-1 hover:bg-gray-50 rounded">
                 <input type="checkbox" data-order-id="${order.id}" data-product-id="${item.productId}" class="item-select-checkbox w-4 h-4 text-blue-600 cursor-pointer" checked>
@@ -175,12 +175,12 @@ function generateSupplierList() {
         order.items.filter(i => selectedData[orderId].includes(i.productId)).forEach(item => {
             const key = item.productId + '_' + order.branchId;
             if (!mergedItems[key]) {
-                mergedItems[key] = { 
-                    ...item, branchId: order.branchId, branchFormattedName, quantity: 0, orderIds: [] 
+                mergedItems[key] = {
+                    ...item, branchId: order.branchId, branchFormattedName, quantity: 0, orderIds: []
                 };
             }
             mergedItems[key].quantity += item.quantity;
-            if(!mergedItems[key].orderIds.includes(order.id)) mergedItems[key].orderIds.push(order.id);
+            if (!mergedItems[key].orderIds.includes(order.id)) mergedItems[key].orderIds.push(order.id);
         });
     }
 
@@ -188,10 +188,10 @@ function generateSupplierList() {
         const supplier = allSuppliers.find(s => s.id === item.supplier);
         const supplierName = supplier ? supplier.name : 'Uncategorized';
         const supplierId = supplier ? supplier.id : 'unknown';
-        
+
         if (!acc[item.branchId]) acc[item.branchId] = { branchFormattedName: item.branchFormattedName, suppliers: {} };
         if (!acc[item.branchId].suppliers[supplierId]) acc[item.branchId].suppliers[supplierId] = { name: supplierName, items: [] };
-        
+
         acc[item.branchId].suppliers[supplierId].items.push(item);
         return acc;
     }, {});
@@ -208,10 +208,10 @@ function generateSupplierList() {
 
         tabsHtml += `<button class="branch-tab-btn px-4 py-3 border-b-2 font-bold text-sm whitespace-nowrap ${activeTabClass}" data-target="tab-pane-${branchId}">${branchData.branchFormattedName.split('-')[0].trim()}</button>`;
         contentHtml += `<div id="tab-pane-${branchId}" class="branch-tab-pane ${activeContentClass}" data-branch-id="${branchId}" data-branch-full-name="${branchData.branchFormattedName.replace(/"/g, '&quot;')}">`;
-        
+
         for (const supplierId in branchData.suppliers) {
             const suppData = branchData.suppliers[supplierId];
-            
+
             // L'ajout du bouton "Copy this list" est ici
             contentHtml += `
                 <div class="supplier-block mb-4 p-4 bg-white rounded border shadow-sm" data-supplier-id="${supplierId}" data-supplier-name="${suppData.name.replace(/"/g, '&quot;')}">
@@ -246,7 +246,7 @@ function generateSupplierList() {
             <button id="mark-processed-btn" class="flex-grow bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-yellow-600 shadow-sm" data-key="mark_tab_processed">Mark Checked Items in THIS Tab as Processed</button>
             <button id="copy-all-lists-btn" class="bg-gray-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-900 flex items-center justify-center gap-2 shadow-sm" data-key="copy_displayed_branch">Copy Displayed Branch</button>
         </div>`;
-    
+
     // TRANSITION UX: Cache Pending, Montre Supplier List
     document.getElementById('pending-orders-wrapper').classList.add('hidden');
     document.getElementById('supplier-list-wrapper').classList.remove('hidden');
@@ -277,13 +277,33 @@ async function markOrdersAsProcessed() {
         });
     });
 
+    // 1. GESTION DES COMMANDES ORIGINALES
+    // On met à jour ou on supprime la commande originale AVANT de créer les nouvelles
+    affectedOrderIds.forEach(orderId => {
+        const originalOrder = pendingOrders.find(o => o.id === orderId);
+        if (!originalOrder) return;
+
+        const pIdsToRemove = processedProductIdsByOrder[orderId] || [];
+        const remainingItems = originalOrder.items.filter(i => !pIdsToRemove.includes(i.productId));
+
+        if (remainingItems.length === 0) {
+            // La commande a été entièrement sélectionnée, on la supprime pour éviter les doublons
+            batch.delete(doc(db, "orders", orderId));
+        } else {
+            // Il reste des articles non cochés, la commande originale reste en Pending avec le reste
+            batch.update(doc(db, "orders", orderId), { items: remainingItems });
+        }
+    });
+
+    // 2. CREATION DES POs (PARENTS) ET DES SOUS-COMMANDES (ENFANTS)
     const supplierBlocks = activePane.querySelectorAll('.supplier-block');
-    
+
     supplierBlocks.forEach(block => {
         const supplierId = block.dataset.supplierId;
         const checkedBoxesInBlock = block.querySelectorAll('.final-item-checkbox:checked');
         if (checkedBoxesInBlock.length === 0) return;
 
+        // A. Création du Bon de Commande (Parent)
         const consolidatedItems = Array.from(checkedBoxesInBlock).map(cb => {
             return {
                 productId: cb.dataset.productId, productName: cb.dataset.productName || '',
@@ -299,24 +319,26 @@ async function markOrdersAsProcessed() {
             supplierId: supplierId, items: consolidatedItems
         });
 
+        // B. Création de toutes les sous-commandes propres à CE fournisseur (Enfants)
         affectedOrderIds.forEach(orderId => {
             const originalOrder = pendingOrders.find(o => o.id === orderId);
             if (!originalOrder) return;
-            
+
             const pIdsToRemove = processedProductIdsByOrder[orderId] || [];
+            // On ne prend QUE les items qui étaient cochés ET qui appartiennent à ce fournisseur précis
             const itemsForThisSupplier = originalOrder.items.filter(i => pIdsToRemove.includes(i.productId) && i.supplier === supplierId);
-            const remainingItems = originalOrder.items.filter(i => !pIdsToRemove.includes(i.productId));
 
             if (itemsForThisSupplier.length > 0) {
-                if (remainingItems.length === 0) {
-                    batch.update(doc(db, "orders", orderId), { status: "Processed", poId: newPoRef.id });
-                } else {
-                    batch.update(doc(db, "orders", orderId), { items: remainingItems });
-                    const newChildRef = doc(collection(db, "orders"));
-                    const newChildData = { ...originalOrder, items: itemsForThisSupplier, status: "Processed", splitFrom: orderId, poId: newPoRef.id };
-                    delete newChildData.id;
-                    batch.set(newChildRef, newChildData);
-                }
+                const newChildRef = doc(collection(db, "orders"));
+                const newChildData = { 
+                    ...originalOrder, 
+                    items: itemsForThisSupplier, 
+                    status: "Processed", 
+                    splitFrom: orderId, 
+                    poId: newPoRef.id 
+                };
+                delete newChildData.id; // Important pour éviter d'écrire l'ancien ID
+                batch.set(newChildRef, newChildData);
             }
         });
     });
@@ -326,12 +348,15 @@ async function markOrdersAsProcessed() {
         showToast('Purchase Orders generated successfully.');
         document.getElementById('supplier-list-wrapper').classList.add('hidden');
         document.getElementById('pending-orders-wrapper').classList.remove('hidden');
-    } catch (e) { showToast('Error updating orders.', true); }
+    } catch (e) { 
+        console.error(e); 
+        showToast('Error updating orders.', true); 
+    }
 }
 
 function renderOrderHistory() {
     const container = document.getElementById('grouped-history-container');
-    if(!container) return;
+    if (!container) return;
     const branchContext = currentUserRole === 'admin' ? currentUserBranchId : activeBranchContext;
     let filteredHistory = purchaseOrders.filter(o => branchContext === 'ALL' || o.branchId === branchContext);
 
@@ -342,64 +367,83 @@ function renderOrderHistory() {
 
     if (statusF) filteredHistory = filteredHistory.filter(o => o.status === statusF);
     if (branchF) filteredHistory = filteredHistory.filter(o => o.branchId === branchF);
-    if (startInput) filteredHistory = filteredHistory.filter(o => o.createdAt && o.createdAt.toMillis() >= new Date(startInput).setHours(0,0,0,0));
-    if (endInput) filteredHistory = filteredHistory.filter(o => o.createdAt && o.createdAt.toMillis() <= new Date(endInput).setHours(23,59,59,999));
+    if (startInput) filteredHistory = filteredHistory.filter(o => o.createdAt && o.createdAt.toMillis() >= new Date(startInput).setHours(0, 0, 0, 0));
+    if (endInput) filteredHistory = filteredHistory.filter(o => o.createdAt && o.createdAt.toMillis() <= new Date(endInput).setHours(23, 59, 59, 999));
 
     if (filteredHistory.length === 0) {
         container.innerHTML = `<p class="text-gray-500 text-center p-6 bg-gray-50 rounded border">No Purchase Orders found.</p>`;
         return;
     }
 
-    const hierarchy = {};
+    // Tri par date décroissante
+    filteredHistory.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+    let html = '';
     filteredHistory.forEach(po => {
         const dateStr = po.createdAt ? formatDate(po.createdAt.toDate()) : 'N/A';
         const branchName = allBranches.find(b => b.id === po.branchId)?.name || 'Unknown Branch';
-        
-        if(!hierarchy[dateStr]) hierarchy[dateStr] = {};
-        if(!hierarchy[dateStr][branchName]) hierarchy[dateStr][branchName] = [];
-        hierarchy[dateStr][branchName].push(po);
+        const supplierName = allSuppliers.find(s => s.id === po.supplierId)?.name || 'Unknown Supplier';
+
+        let statusBadge = '';
+        if (po.status === 'Processed') statusBadge = 'bg-yellow-100 text-yellow-800';
+        else if (po.status === 'Received') statusBadge = 'bg-blue-100 text-blue-800';
+        else if (po.status === 'Paid') statusBadge = 'bg-green-100 text-green-800';
+
+        let rollbackBtn = '';
+        if (po.status === 'Processed' && (currentUserRole === 'superadmin' || currentUserRole === 'admin')) {
+            rollbackBtn = `<button data-poid="${po.id}" class="rollback-po-btn text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded shadow-sm hover:bg-red-200 font-bold" data-key="rollback">Rollback to Pending</button>`;
+        }
+
+        const itemsHtml = po.items.map(i => {
+            const qty = i.receivedQuantity !== undefined ? `<span class="text-green-600">${i.receivedQuantity}</span> / ${i.quantity}` : `${i.quantity}`;
+            return `<li class="flex justify-between items-center py-1 border-b last:border-0 border-gray-200">
+                <span class="text-gray-800">${i[`productName_${currentLang}`] || i.productName}</span>
+                <span class="font-mono font-bold bg-white px-2 py-0.5 rounded border shadow-sm">${qty} ${i[`packaging_${currentLang}`] || i.packaging}</span>
+            </li>`;
+        }).join('');
+
+        const financialsHtml = po.financials ? `
+            <div class="mt-4 bg-white p-3 rounded border border-gray-200 text-sm">
+                <p class="font-bold text-gray-700 mb-2 border-b pb-1">Financials</p>
+                <div class="grid grid-cols-2 gap-2 text-gray-600">
+                    <p>Amount: <span class="font-mono font-bold text-blue-700">${po.financials.totalAmount} THB</span></p>
+                    <p>Inv Ref: <span class="font-mono">${po.financials.invoiceRef || 'N/A'}</span></p>
+                    <p>Method: <span class="font-medium">${po.financials.paymentMethod || 'N/A'}</span></p>
+                    <p>Due: <span class="font-medium">${po.financials.paymentDueDate || 'N/A'}</span></p>
+                </div>
+            </div>` : '';
+
+        html += `
+            <div class="bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow mb-3 overflow-hidden">
+                <!-- ACCORDION HEADER (Always visible) -->
+                <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer toggle-history-details hover:bg-gray-50 transition-colors">
+                    <div>
+                        <h4 class="font-bold text-gray-800 text-lg">${supplierName}</h4>
+                        <div class="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-2">
+                            <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-bold text-[10px] uppercase tracking-wider">${branchName}</span>
+                            <span class="flex items-center gap-1">📅 ${dateStr}</span>
+                            <span class="flex items-center gap-1 font-bold">📦 ${po.items.length} items</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto border-t sm:border-0 pt-2 sm:pt-0">
+                        <span class="px-3 py-1 rounded text-xs font-bold uppercase ${statusBadge}">${po.status}</span>
+                        <svg class="w-5 h-5 text-gray-400 transform transition-transform duration-200 chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+                <!-- ACCORDION BODY (Hidden by default) -->
+                <div class="history-details-pane hidden border-t bg-gray-50 p-4">
+                    <ul class="text-sm pl-2 border-l-4 border-blue-400">
+                        ${itemsHtml}
+                    </ul>
+                    ${financialsHtml}
+                    <div class="flex justify-between items-center mt-4 pt-3 border-t">
+                        <span class="text-[10px] text-gray-400 font-mono bg-white px-2 py-1 rounded border">PO: ${po.id}</span>
+                        ${rollbackBtn}
+                    </div>
+                </div>
+            </div>`;
     });
 
-    let html = '';
-    const dates = Object.keys(hierarchy).sort((a,b) => new Date(b) - new Date(a));
-    
-    dates.forEach(dateStr => {
-        html += `<div class="mb-6"><h4 class="text-lg font-extrabold text-gray-800 border-b-2 border-gray-800 pb-1 mb-3">📅 ${dateStr}</h4>`;
-        Object.keys(hierarchy[dateStr]).sort().forEach(branch => {
-            html += `<div class="ml-2 mb-4"><h5 class="font-bold text-blue-700 bg-blue-50 p-2 rounded mb-2 flex items-center gap-2">🏢 ${branch}</h5><div class="space-y-3 pl-3 border-l-2 border-gray-300">`;
-            
-            hierarchy[dateStr][branch].forEach(po => {
-                const supplierName = allSuppliers.find(s => s.id === po.supplierId)?.name || 'Unknown Supplier';
-                const itemsHtml = po.items.map(i => `${i.quantity}x ${i[`productName_${currentLang}`]||i.productName}`).join(', ');
-                
-                let statusBadge = '';
-                if (po.status === 'Processed') statusBadge = 'bg-yellow-100 text-yellow-800';
-                else if (po.status === 'Received') statusBadge = 'bg-blue-100 text-blue-800';
-                else if (po.status === 'Paid') statusBadge = 'bg-green-100 text-green-800';
-
-                let rollbackBtn = '';
-                if (po.status === 'Processed' && (currentUserRole === 'superadmin' || currentUserRole === 'admin')) {
-                    rollbackBtn = `<button data-poid="${po.id}" class="rollback-po-btn text-xs bg-red-100 text-red-700 px-3 py-1 rounded shadow-sm hover:bg-red-200 font-bold" data-key="rollback">Rollback to Pending</button>`;
-                }
-
-                html += `
-                    <div class="bg-white p-4 rounded border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-md transition-shadow">
-                        <div class="flex-1">
-                            <p class="font-bold text-gray-800 text-lg">${supplierName}</p>
-                            <p class="text-gray-500 text-xs font-bold uppercase mb-2" data-key="consolidated">Purchase Order</p>
-                            <p class="text-gray-600 text-sm mt-1 leading-relaxed">${itemsHtml}</p>
-                        </div>
-                        <div class="flex flex-col items-end gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0">
-                            <span class="px-3 py-1 rounded text-xs font-bold uppercase ${statusBadge}">${po.status}</span>
-                            ${rollbackBtn}
-                            <span class="text-[10px] text-gray-400 font-mono mt-1">${po.id}</span>
-                        </div>
-                    </div>`;
-            });
-            html += `</div></div>`;
-        });
-        html += `</div>`;
-    });
     container.innerHTML = html;
 }
 
@@ -563,7 +607,7 @@ function setupEventListeners() {
     });
     document.getElementById('clear-history-filters')?.addEventListener('click', () => {
         ['history-status-filter', 'history-branch-filter', 'history-start-date', 'history-end-date'].forEach(id => {
-            if(document.getElementById(id)) document.getElementById(id).value = '';
+            if (document.getElementById(id)) document.getElementById(id).value = '';
         });
         renderOrderHistory();
     });
@@ -581,7 +625,7 @@ function setupEventListeners() {
         if (e.target.classList.contains('pending-master-checkbox')) {
             const isChecked = e.target.checked;
             const nextRow = e.target.closest('tr').nextElementSibling;
-            if(nextRow) nextRow.querySelectorAll('.item-select-checkbox').forEach(cb => cb.checked = isChecked);
+            if (nextRow) nextRow.querySelectorAll('.item-select-checkbox').forEach(cb => cb.checked = isChecked);
         }
 
         const cancelBtn = e.target.closest('.cancel-order-btn');
@@ -640,14 +684,14 @@ function setupEventListeners() {
 
     document.getElementById('supplier-list-wrapper').addEventListener('click', (e) => {
         if (e.target.id === 'mark-processed-btn') return markOrdersAsProcessed();
-        
+
         if (e.target.classList.contains('branch-tab-btn')) {
             document.querySelectorAll('.branch-tab-btn').forEach(btn => {
                 btn.classList.remove('border-blue-600', 'text-blue-600', 'bg-blue-50');
                 btn.classList.add('border-transparent', 'text-gray-500');
             });
             document.querySelectorAll('.branch-tab-pane').forEach(pane => pane.classList.add('hidden'));
-            
+
             e.target.classList.remove('border-transparent', 'text-gray-500');
             e.target.classList.add('border-blue-600', 'text-blue-600', 'bg-blue-50');
             document.getElementById(e.target.dataset.target).classList.remove('hidden');
@@ -662,16 +706,16 @@ function setupEventListeners() {
             let fullText = "";
             activePane.querySelectorAll('.supplier-block').forEach(block => {
                 const checkedItems = Array.from(block.querySelectorAll('.final-item-checkbox:checked')).map(cb => cb.closest('li').dataset.rawText);
-                if(checkedItems.length > 0) {
+                if (checkedItems.length > 0) {
                     fullText += `=== ${block.dataset.supplierName} ===\n\n[${branchFullName}]\n`;
                     fullText += checkedItems.join('\n') + `\n\n`;
                 }
             });
-            if(!fullText) return showToast(translations[currentLang].nothing_to_copy || "Nothing checked to copy.", true);
+            if (!fullText) return showToast(translations[currentLang].nothing_to_copy || "Nothing checked to copy.", true);
             navigator.clipboard.writeText(fullText.trim()).then(() => showToast(translations[currentLang].copied || "Copied!"));
             return;
         }
-        
+
         // Bouton Copier Individuel
         const copyBtn = e.target.closest('.copy-supplier-list-btn');
         if (copyBtn) {
@@ -680,7 +724,7 @@ function setupEventListeners() {
             const branchFullName = block.closest('.branch-tab-pane').dataset.branchFullName;
             let textToCopy = `=== ${supplierName} ===\n\n[${branchFullName}]\n`;
             const checkedItems = Array.from(block.querySelectorAll('.final-item-checkbox:checked')).map(cb => cb.closest('li').dataset.rawText);
-            if(checkedItems.length > 0) {
+            if (checkedItems.length > 0) {
                 textToCopy += checkedItems.join('\n') + `\n`;
                 navigator.clipboard.writeText(textToCopy.trim()).then(() => showToast(translations[currentLang].copied || "Copied!"));
             } else {
@@ -689,28 +733,7 @@ function setupEventListeners() {
             return;
         }
     });
-
-    document.getElementById('grouped-history-container')?.addEventListener('click', async (e) => {
-        const rollbackBtn = e.target.closest('.rollback-po-btn');
-        if (rollbackBtn) {
-            if(!confirm(translations[currentLang].confirm_rollback || "Cancel Purchase Order? Linked requests will revert to Pending.")) return;
-            
-            const poId = rollbackBtn.dataset.poid;
-            const batch = writeBatch(db);
-            
-            batch.delete(doc(db, "purchase_orders", poId));
-            
-            const childQ = query(collection(db, "orders"), where("poId", "==", poId));
-            const childSnap = await getDocs(childQ);
-            childSnap.forEach(childDoc => {
-                batch.update(childDoc.ref, { status: "Pending", poId: deleteField() });
-            });
-            
-            await batch.commit();
-            showToast("Purchase Order cancelled. Orders restored.");
-        }
-    });
-
+    
     document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', (e) => {
         e.target.closest('.fixed.inset-0').classList.replace('flex', 'hidden');
     }));
@@ -744,6 +767,39 @@ function setupEventListeners() {
         }
         document.getElementById('edit-order-modal').classList.replace('flex', 'hidden');
         showToast('Order updated!');
+    });
+
+    document.getElementById('grouped-history-container')?.addEventListener('click', async (e) => {
+
+        // --- NOUVEAU : GESTION DE L'ACCORDÉON ---
+        const toggleHeader = e.target.closest('.toggle-history-details');
+        if (toggleHeader) {
+            const pane = toggleHeader.nextElementSibling;
+            const chevron = toggleHeader.querySelector('.chevron-icon');
+            pane.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+        }
+
+        // --- EXISTANT : GESTION DU ROLLBACK ---
+        const rollbackBtn = e.target.closest('.rollback-po-btn');
+        if (rollbackBtn) {
+            e.stopPropagation(); // Évite de replier l'accordéon quand on clique sur rollback
+            if (!confirm(translations[currentLang].confirm_rollback || "Cancel Purchase Order? Linked requests will revert to Pending.")) return;
+
+            const poId = rollbackBtn.dataset.poid;
+            const batch = writeBatch(db);
+
+            batch.delete(doc(db, "purchase_orders", poId));
+
+            const childQ = query(collection(db, "orders"), where("poId", "==", poId));
+            const childSnap = await getDocs(childQ);
+            childSnap.forEach(childDoc => {
+                batch.update(childDoc.ref, { status: "Pending", poId: deleteField() });
+            });
+
+            await batch.commit();
+            showToast("Purchase Order cancelled. Orders restored.");
+        }
     });
 
     setupSearchInputs();
